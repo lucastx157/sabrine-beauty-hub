@@ -8,15 +8,16 @@ async function saveOutboundMessage(
   payload: Record<string, unknown>,
   responseData: Record<string, unknown> | null,
 ) {
+  const rawMessages = responseData?.["messages"];
   const messageId =
-    (Array.isArray(responseData?.messages) && (responseData.messages as Array<{ id?: string }>)[0]?.id) || null;
+    (Array.isArray(rawMessages) && (rawMessages as Array<{ id?: string }>)[0]?.id) || null;
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("whatsapp_outbound_messages").insert({
     booking_id: bookingId ?? null,
     recipient,
     message_id: messageId,
-    payload,
+    payload: payload as never,
     status: messageId ? "accepted" : "sent",
   });
 

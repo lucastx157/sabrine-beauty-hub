@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const { error: insertError } = await supabaseAdmin.from("whatsapp_webhook_events").insert({
           delivery_id: deliveryId,
           event,
-          payload: verified.payload as Record<string, unknown>,
+          payload: verified.payload as never,
         });
 
         if (insertError) {
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
             if (status.id) {
               const { error: updateError } = await supabaseAdmin
                 .from("whatsapp_outbound_messages")
-                .update({ status: status.status, status_payload: status as unknown as Record<string, unknown> })
+                .update({ status: status.status, status_payload: status as never })
                 .eq("message_id", status.id);
               if (updateError) {
                 console.error("[WhatsApp webhook] status update failed", updateError);

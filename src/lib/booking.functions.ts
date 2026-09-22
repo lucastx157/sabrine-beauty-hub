@@ -73,7 +73,7 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
     const earliest = addDays(now, advanceDays);
     const from = data.from ? parseISO(data.from) : earliest;
     const effectiveFrom = isAfter(from, earliest) ? from : earliest;
-    const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 13);
+    const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 41);
 
     const { data: availability, error: availError } = await supabaseAdmin
       .from("availability")
