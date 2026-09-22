@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as MeusAgendamentosRouteImport } from './routes/meus-agendamentos'
+import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,34 +29,42 @@ const MeusAgendamentosRoute = MeusAgendamentosRouteImport.update({
   path: '/meus-agendamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSetupRoute = AdminSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/meus-agendamentos': typeof MeusAgendamentosRoute
+  '/admin/setup': typeof AdminSetupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/meus-agendamentos': typeof MeusAgendamentosRoute
+  '/admin/setup': typeof AdminSetupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/meus-agendamentos': typeof MeusAgendamentosRoute
+  '/admin/setup': typeof AdminSetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/meus-agendamentos'
+  fullPaths: '/' | '/admin' | '/meus-agendamentos' | '/admin/setup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/meus-agendamentos'
-  id: '__root__' | '/' | '/admin' | '/meus-agendamentos'
+  to: '/' | '/admin' | '/meus-agendamentos' | '/admin/setup'
+  id: '__root__' | '/' | '/admin' | '/meus-agendamentos' | '/admin/setup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   MeusAgendamentosRoute: typeof MeusAgendamentosRoute
 }
 
@@ -82,12 +91,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeusAgendamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/setup': {
+      id: '/admin/setup'
+      path: '/setup'
+      fullPath: '/admin/setup'
+      preLoaderRoute: typeof AdminSetupRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminSetupRoute: typeof AdminSetupRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminSetupRoute: AdminSetupRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   MeusAgendamentosRoute: MeusAgendamentosRoute,
 }
 export const routeTree = rootRouteImport
