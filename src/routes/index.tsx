@@ -248,8 +248,15 @@ function BookingAssistant({
     }
   };
 
+  const [count, setCount] = useState(0);
+
   return (
     <Card className="flex h-[560px] flex-col overflow-hidden border border-border/60 bg-card shadow-card">
+      <div className="p-2">
+        <button type="button" onClick={() => { console.log("count click"); setCount(c => c + 1); }}>
+          debug count {count}
+        </button>
+      </div>
       <div className="flex items-center gap-3 border-b border-border bg-secondary/30 px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <MessageCircle className="h-4.5 w-4.5" />
