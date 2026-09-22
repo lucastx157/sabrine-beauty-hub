@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/public/whatsapp/webhook")({
         const { error: insertError } = await supabaseAdmin.from("whatsapp_webhook_events").insert({
           delivery_id: deliveryId,
           event,
-          payload: verified.payload as Record<string, unknown>,
+          payload: verified.payload as never,
         });
 
         if (insertError) {
