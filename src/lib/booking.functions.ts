@@ -127,16 +127,16 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
         }
       }
 
-      Array.from(daySlots)
-        .sort((a, b) => timeStrToMinutes(a) - timeStrToMinutes(b))
-        .forEach((time) =>
-          slots.push({
-            date: dateStr,
-            time,
-            serviceId: data.serviceId,
-            label: `${formatDisplayDate(dateStr)} às ${time}`,
-          }),
-        );
+        Array.from(daySlots)
+          .sort((a, b) => timeStrToMinutes(a) - timeStrToMinutes(b))
+          .forEach((time) =>
+            slots.push({
+              date: dateStr,
+              time,
+              ...(data.serviceId ? { serviceId: data.serviceId } : {}),
+              label: `${formatDisplayDate(dateStr)} às ${time}`,
+            }),
+          );
     }
 
     return slots;
