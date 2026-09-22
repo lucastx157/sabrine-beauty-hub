@@ -36,7 +36,7 @@ export function formatBrazilTime(date: Date): string {
 
 export function formatDisplayDate(dateStr: string): string {
   const date = parseISO(dateStr);
-  return format(date, "dd/MM/yyyy (EEEE)", { locale: undefined });
+  return format(date, "dd/MM/yyyy (EEEE)");
 }
 
 export function formatCurrencyCents(cents: number): string {
