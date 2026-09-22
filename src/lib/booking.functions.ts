@@ -202,6 +202,7 @@ export const createBooking = createServerFn({ method: "POST" })
           date: data.date,
           time: data.time,
         }),
+        booking.id,
       );
     }
 
