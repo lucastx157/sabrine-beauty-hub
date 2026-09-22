@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createMiddleware } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -7,10 +7,10 @@ const getAdminClient = async () => {
   return supabaseAdmin;
 };
 
-function adminMiddleware() {
-  return requireSupabaseAuth.middleware(async ({ context, next }) => {
+const adminMiddleware = createMiddleware({ type: "function" }).server(
+  async ({ context, next }) => {
     const supabaseAdmin = await getAdminClient();
-    const userId = context.userId;
+    const userId = (context as { userId: string }).userId;
     const { data } = await supabaseAdmin.rpc("has_role", {
       _user_id: userId,
       _role: "admin",
@@ -19,8 +19,8 @@ function adminMiddleware() {
       throw new Response("Forbidden", { status: 403 });
     }
     return next();
-  });
-}
+  },
+);
 
 export const getAvailability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth, adminMiddleware()])
