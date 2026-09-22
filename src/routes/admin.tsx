@@ -371,9 +371,9 @@ function ConfigPanel({
   config: Record<string, string>;
   onSaved: () => void;
 }) {
-  const [notificationNumber, setNotificationNumber] = useState(config.notification_whatsapp_number ?? "");
-  const [advanceDays, setAdvanceDays] = useState(config.advance_booking_days ?? "7");
-  const [policy, setPolicy] = useState(config.cancellation_policy_text ?? "");
+  const [notificationNumber, setNotificationNumber] = useState(config["notification_whatsapp_number"] ?? "");
+  const [advanceDays, setAdvanceDays] = useState(config["advance_booking_days"] ?? "7");
+  const [policy, setPolicy] = useState(config["cancellation_policy_text"] ?? "");
   const [saving, setSaving] = useState(false);
 
   const save = async (e: React.FormEvent) => {
