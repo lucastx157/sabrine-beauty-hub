@@ -110,7 +110,7 @@ function HomePage() {
                 </p>
                 <div className="mt-6 flex items-center justify-between">
                   <span className="text-lg font-semibold text-primary">
-                    {formatCurrencyCents(service.price_cents ?? 0)}
+                    {formatCurrencyCents(service.price_min ?? 0)}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {service.duration_min} min
