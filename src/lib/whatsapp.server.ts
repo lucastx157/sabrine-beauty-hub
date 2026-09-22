@@ -1,6 +1,35 @@
+import { formatDisplayDate } from "./dates";
+
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/whatsapp";
 
-export async function sendWhatsAppNotification(toDigits: string, body: string) {
+async function saveOutboundMessage(
+  bookingId: string | undefined,
+  recipient: string,
+  payload: Record<string, unknown>,
+  responseData: Record<string, unknown> | null,
+) {
+  const messageId =
+    (Array.isArray(responseData?.messages) && (responseData.messages as Array<{ id?: string }>)[0]?.id) || null;
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("whatsapp_outbound_messages").insert({
+    booking_id: bookingId ?? null,
+    recipient,
+    message_id: messageId,
+    payload,
+    status: messageId ? "accepted" : "sent",
+  });
+
+  if (error) {
+    console.error("[WhatsApp] failed to save outbound message", error);
+  }
+}
+
+export async function sendWhatsAppNotification(
+  toDigits: string,
+  body: string,
+  bookingId?: string,
+) {
   const lovableApiKey = process.env["LOVABLE_API_KEY"];
   const whatsappApiKey = process.env["WHATSAPP_API_KEY"];
 
@@ -40,6 +69,10 @@ export async function sendWhatsAppNotification(toDigits: string, body: string) {
     // ignore
   }
 
+  await saveOutboundMessage(bookingId, toDigits, payload, data).catch((err) => {
+    console.error("[WhatsApp] save outbound failed", err);
+  });
+
   console.log("[WhatsApp] sent", data);
   return { ok: true, skipped: false, data };
 }
@@ -52,12 +85,7 @@ export function bookingNotificationMessage(args: {
   time: string;
 }) {
   const { type, clientName, serviceName, date, time } = args;
-  const displayDate = new Date(date).toLocaleDateString("pt-BR", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const displayDate = formatDisplayDate(date);
 
   switch (type) {
     case "created":
