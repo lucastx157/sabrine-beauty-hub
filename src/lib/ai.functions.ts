@@ -12,7 +12,7 @@ import { addDays } from "date-fns";
 const MODEL = "google/gemini-3.7-flash";
 const ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
-const messageSchema = z.object({
+const inputMessageSchema = z.object({
   role: z.enum(["user", "assistant", "tool"]),
   content: z.string().optional(),
   tool_calls: z
@@ -28,10 +28,21 @@ const messageSchema = z.object({
 });
 
 const chatSchema = z.object({
-  messages: z.array(messageSchema),
+  messages: z.array(inputMessageSchema),
 });
 
-type ChatMessage = z.infer<typeof messageSchema>;
+type ChatMessage =
+  | { role: "system"; content: string }
+  | {
+      role: "user" | "assistant" | "tool";
+      content: string;
+      tool_calls?: Array<{
+        id: string;
+        type: "function";
+        function: { name: string; arguments: string };
+      }>;
+      tool_call_id?: string;
+    };
 
 const tools = [
   {
