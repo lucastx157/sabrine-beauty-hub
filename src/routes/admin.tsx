@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,16 +36,16 @@ export const Route = createFileRoute("/admin")({
 const weekDays = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 function AdminPage() {
-  const [session, setSession] = useState<typeof supabase.auth.getSession extends () => Promise<infer R> ? R : never>();
+  const [session, setSession] = useState<Session | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then((s) => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setChecking(false);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession({ data: { session: newSession }, error: null } as typeof session);
+      setSession(newSession);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -53,14 +54,14 @@ function AdminPage() {
     return <div className="p-10 text-center">Carregando…</div>;
   }
 
-  if (!session?.data?.session) {
-    return <AdminLogin onLogin={(s) => setSession({ data: { session: s }, error: null } as typeof session)} />;
+  if (!session) {
+    return <AdminLogin onLogin={(s) => setSession(s)} />;
   }
 
   return <AdminDashboard />;
 }
 
-function AdminLogin({ onLogin }: { onLogin: (session: NonNullable<typeof session>["data"]["session"]) => void }) {
+function AdminLogin({ onLogin }: { onLogin: (session: Session) => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
