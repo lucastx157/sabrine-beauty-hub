@@ -223,7 +223,6 @@ function BookingAssistant({
   }, [messages, isLoading]);
 
   const handleSend = async () => {
-    console.log("handleSend called, input:", input);
     if (!input.trim() || isLoading) return;
     const userMessage = input.trim();
     setInput("");
