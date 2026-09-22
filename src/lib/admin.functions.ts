@@ -10,7 +10,7 @@ const getAdminClient = async () => {
 const adminMiddleware = createMiddleware({ type: "function" }).server(
   async ({ context, next }) => {
     const supabaseAdmin = await getAdminClient();
-    const userId = (context as { userId: string }).userId;
+    const userId = (context as unknown as { userId: string }).userId;
     const { data } = await supabaseAdmin.rpc("has_role", {
       _user_id: userId,
       _role: "admin",
