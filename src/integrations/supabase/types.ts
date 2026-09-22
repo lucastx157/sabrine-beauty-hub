@@ -188,6 +188,50 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_outbound_messages: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          message_id: string | null
+          payload: Json | null
+          recipient: string
+          status: string | null
+          status_payload: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_id?: string | null
+          payload?: Json | null
+          recipient: string
+          status?: string | null
+          status_payload?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          message_id?: string | null
+          payload?: Json | null
+          recipient?: string
+          status?: string | null
+          status_payload?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_outbound_messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_webhook_events: {
         Row: {
           delivery_id: string | null
