@@ -278,6 +278,7 @@ export const cancelBooking = createServerFn({ method: "POST" })
           date: booking.booking_date,
           time: booking.start_time,
         }),
+        booking.id,
       );
     }
 
