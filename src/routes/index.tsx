@@ -308,7 +308,10 @@ function BookingAssistant({
         >
           <Input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              console.log("onChange:", e.target.value);
+              setInput(e.target.value);
+            }}
             placeholder="Escreva aqui…"
             className="flex-1 rounded-full"
             disabled={isLoading}
