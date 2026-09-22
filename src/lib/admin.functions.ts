@@ -23,7 +23,7 @@ const adminMiddleware = createMiddleware({ type: "function" }).server(
 );
 
 export const getAvailability = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .handler(async () => {
     const supabaseAdmin = await getAdminClient();
     const { data, error } = await supabaseAdmin
@@ -44,7 +44,7 @@ const saveAvailabilitySchema = z.object({
 });
 
 export const saveAvailability = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .inputValidator((data) => saveAvailabilitySchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
@@ -78,7 +78,7 @@ export const saveAvailability = createServerFn({ method: "POST" })
 const deleteAvailabilitySchema = z.object({ id: z.string().uuid() });
 
 export const deleteAvailability = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .inputValidator((data) => deleteAvailabilitySchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
@@ -91,7 +91,7 @@ export const deleteAvailability = createServerFn({ method: "POST" })
   });
 
 export const getAdminBookings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .handler(async () => {
     const supabaseAdmin = await getAdminClient();
     const today = new Date().toISOString().split("T")[0];
@@ -111,7 +111,7 @@ const updateBookingStatusSchema = z.object({
 });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .inputValidator((data) => updateBookingStatusSchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
@@ -124,7 +124,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
   });
 
 export const getAppConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .handler(async () => {
     const supabaseAdmin = await getAdminClient();
     const { data, error } = await supabaseAdmin.from("app_config").select("*");
@@ -139,7 +139,7 @@ export const getAppConfig = createServerFn({ method: "GET" })
 const updateAppConfigSchema = z.record(z.string().min(0).max(2000));
 
 export const updateAppConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth, adminMiddleware()])
+  .middleware([requireSupabaseAuth, adminMiddleware])
   .inputValidator((data) => updateAppConfigSchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
