@@ -159,7 +159,7 @@ async function executeTool(call: {
             services.map((s) => ({
               id: s.id,
               name: s.name,
-              price_cents: s.price_cents,
+              price_min: s.price_min,
               duration_min: s.duration_min,
               description: s.description,
             })),
@@ -168,16 +168,16 @@ async function executeTool(call: {
       }
       case "get_available_slots": {
         const from =
-          typeof args.date_from === "string" && args.date_from
-            ? args.date_from
+          typeof args["date_from"] === "string" && args["date_from"]
+            ? args["date_from"]
             : formatBrazilDate(addDays(nowInBrazil(), 7));
         const to =
-          typeof args.date_to === "string" && args.date_to
-            ? args.date_to
+          typeof args["date_to"] === "string" && args["date_to"]
+            ? args["date_to"]
             : formatBrazilDate(addDays(nowInBrazil(), 20));
         const slots = await getAvailableSlots({
           data: {
-            serviceId: typeof args.service_id === "string" ? args.service_id : undefined,
+            serviceId: typeof args["service_id"] === "string" ? args["service_id"] : undefined,
             from,
             to,
           },
@@ -196,10 +196,10 @@ async function executeTool(call: {
       }
       case "create_booking": {
         if (
-          typeof args.service_id !== "string" ||
-          typeof args.date !== "string" ||
-          typeof args.time !== "string" ||
-          typeof args.client_name !== "string"
+          typeof args["service_id"] !== "string" ||
+          typeof args["date"] !== "string" ||
+          typeof args["time"] !== "string" ||
+          typeof args["client_name"] !== "string"
         ) {
           return {
             tool_call_id: call.id,
@@ -209,11 +209,11 @@ async function executeTool(call: {
         }
         const booking = await createBooking({
           data: {
-            serviceId: args.service_id,
-            date: args.date,
-            time: args.time,
-            clientName: args.client_name,
-            clientPhone: typeof args.client_phone === "string" ? args.client_phone : undefined,
+            serviceId: args["service_id"],
+            date: args["date"],
+            time: args["time"],
+            clientName: args["client_name"],
+            clientPhone: typeof args["client_phone"] === "string" ? args["client_phone"] : undefined,
           },
         });
         return {
@@ -222,8 +222,8 @@ async function executeTool(call: {
           content: JSON.stringify({
             success: true,
             booking_id: (booking as { id: string }).id,
-            date: args.date,
-            time: args.time,
+            date: args["date"],
+            time: args["time"],
           }),
         };
       }
