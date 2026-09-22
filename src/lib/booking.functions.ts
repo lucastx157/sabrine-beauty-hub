@@ -202,6 +202,7 @@ export const createBooking = createServerFn({ method: "POST" })
           date: data.date,
           time: data.time,
         }),
+        booking.id,
       );
     }
 
@@ -277,6 +278,7 @@ export const cancelBooking = createServerFn({ method: "POST" })
           date: booking.booking_date,
           time: booking.start_time,
         }),
+        booking.id,
       );
     }
 
@@ -346,6 +348,7 @@ export const rescheduleBooking = createServerFn({ method: "POST" })
           date: data.newDate,
           time: data.newTime,
         }),
+        booking.id,
       );
     }
 
