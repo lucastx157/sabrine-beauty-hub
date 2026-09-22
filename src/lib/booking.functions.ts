@@ -181,7 +181,7 @@ export const createBooking = createServerFn({ method: "POST" })
       .insert({
         service_id: data.serviceId,
         client_name: data.clientName.trim(),
-        client_phone: data.clientPhone?.replace(/\D/g, ""),
+        client_phone: data.clientPhone?.replace(/\D/g, "") ?? null,
         booking_date: data.date,
         start_time: data.time,
         end_time: endTime,
