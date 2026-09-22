@@ -348,6 +348,7 @@ export const rescheduleBooking = createServerFn({ method: "POST" })
           date: data.newDate,
           time: data.newTime,
         }),
+        booking.id,
       );
     }
 
