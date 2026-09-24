@@ -120,39 +120,48 @@ function weekKey(dateStr: string) {
 const awards = [
   {
     icon: Trophy,
-    title: "Mentoria Avançada em Design",
-    description: "Certificação em técnicas exclusivas de visagismo e design personalizado.",
+    image: "/images/premio-palco.jpg",
+    title: "Beauty Stars Minas Gerais",
+    description: "Premiada no palco do Beauty Stars MG, reconhecimento estadual em design de sobrancelhas.",
   },
   {
     icon: Award,
-    title: "Campeã de Sobrancelhas",
-    description: "Reconhecimento em competições regionais pela precisão e naturalidade dos resultados.",
+    image: "/images/premio-trofeu.jpg",
+    title: "Troféu Estrela",
+    description: "Destaque entre os profissionais da beleza de Minas Gerais pela excelência dos resultados.",
   },
   {
     icon: Medal,
-    title: "Especialista em Micropigmentação",
-    description: "Formação contínua em fio a fio, shadow e lábios com os melhores mestres do Brasil.",
+    image: "/images/destaque-rainha.jpg",
+    title: "A escolha das personalidades",
+    description: "Responsável pela produção da Rainha da Expo Samonte e de clientes em eventos da região.",
   },
 ];
 
 const gallery = [
   {
     image: "/images/procedure-microblading.jpg",
-    title: "Microblanding Flow",
+    title: "Micropigmentação Fio a Fio",
     subtitle: "Fios hiper-realistas",
     description: "Técnica de fios ultra-finos desenhados um a um para preencher falhas e criar sobrancelhas naturais e harmoniosas.",
-  },
-  {
-    image: "/images/procedure-brow-lamination.jpg",
-    title: "Brow Lamination",
-    subtitle: "Volume e alinhamento",
-    description: "Alinhamento dos fios naturais para um efeito volumoso, moderno e sofisticado que dura semanas.",
   },
   {
     image: "/images/procedure-design-henna.jpg",
     title: "Design com Henna",
     subtitle: "Cor e definição",
     description: "Mapeamento facial + henna premium para preencher e definir o contorno ideal do seu olhar.",
+  },
+  {
+    image: "/images/procedure-labial.jpg",
+    title: "Micropigmentação Labial",
+    subtitle: "Lábios definidos",
+    description: "Contorno desenhado e cor natural revitalizada, com acabamento hidratado e aspecto saudável.",
+  },
+  {
+    image: "/images/destaque-rainha.jpg",
+    title: "Produção Especial",
+    subtitle: "Rainha Expo Samonte",
+    description: "Sobrancelhas e produção para eventos e concursos, com acabamento impecável em cada detalhe.",
   },
 ];
 
@@ -424,16 +433,29 @@ function HomePage() {
             {awards.map((award, i) => (
               <Card
                 key={award.title}
-                className="glass-card group p-8 transition-all hover:-translate-y-3 hover:shadow-gold"
+                className="glass-card group overflow-hidden p-0 transition-all hover:-translate-y-3 hover:shadow-gold"
               >
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
-                  <award.icon className="h-6 w-6" />
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <img
+                    src={award.image}
+                    alt={award.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    width={800}
+                    height={1000}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brown/80 via-transparent to-transparent" />
+                  <div className="absolute left-5 top-5 flex h-11 w-11 items-center justify-center rounded-full bg-primary/90 text-white shadow-gold">
+                    <award.icon className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className="mb-4 font-serif text-3xl italic text-primary">0{i + 1}</div>
-                <h4 className="font-serif text-xl text-primary-foreground">{award.title}</h4>
-                <p className="mt-3 text-sm leading-relaxed text-primary-foreground/70">
-                  {award.description}
-                </p>
+                <div className="p-8">
+                  <div className="mb-3 font-serif text-3xl italic text-primary">0{i + 1}</div>
+                  <h4 className="font-serif text-xl text-primary-foreground">{award.title}</h4>
+                  <p className="mt-3 text-sm leading-relaxed text-primary-foreground/70">
+                    {award.description}
+                  </p>
+                </div>
               </Card>
             ))}
           </div>
