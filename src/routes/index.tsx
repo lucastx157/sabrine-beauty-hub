@@ -120,39 +120,48 @@ function weekKey(dateStr: string) {
 const awards = [
   {
     icon: Trophy,
-    title: "Mentoria Avançada em Design",
-    description: "Certificação em técnicas exclusivas de visagismo e design personalizado.",
+    image: "/images/premio-palco.jpg",
+    title: "Beauty Stars Minas Gerais",
+    description: "Premiada no palco do Beauty Stars MG, reconhecimento estadual em design de sobrancelhas.",
   },
   {
     icon: Award,
-    title: "Campeã de Sobrancelhas",
-    description: "Reconhecimento em competições regionais pela precisão e naturalidade dos resultados.",
+    image: "/images/premio-trofeu.jpg",
+    title: "Troféu Estrela",
+    description: "Destaque entre os profissionais da beleza de Minas Gerais pela excelência dos resultados.",
   },
   {
     icon: Medal,
-    title: "Especialista em Micropigmentação",
-    description: "Formação contínua em fio a fio, shadow e lábios com os melhores mestres do Brasil.",
+    image: "/images/destaque-rainha.jpg",
+    title: "A escolha das personalidades",
+    description: "Responsável pela produção da Rainha da Expo Samonte e de clientes em eventos da região.",
   },
 ];
 
 const gallery = [
   {
     image: "/images/procedure-microblading.jpg",
-    title: "Microblanding Flow",
+    title: "Micropigmentação Fio a Fio",
     subtitle: "Fios hiper-realistas",
     description: "Técnica de fios ultra-finos desenhados um a um para preencher falhas e criar sobrancelhas naturais e harmoniosas.",
-  },
-  {
-    image: "/images/procedure-brow-lamination.jpg",
-    title: "Brow Lamination",
-    subtitle: "Volume e alinhamento",
-    description: "Alinhamento dos fios naturais para um efeito volumoso, moderno e sofisticado que dura semanas.",
   },
   {
     image: "/images/procedure-design-henna.jpg",
     title: "Design com Henna",
     subtitle: "Cor e definição",
     description: "Mapeamento facial + henna premium para preencher e definir o contorno ideal do seu olhar.",
+  },
+  {
+    image: "/images/procedure-labial.jpg",
+    title: "Micropigmentação Labial",
+    subtitle: "Lábios definidos",
+    description: "Contorno desenhado e cor natural revitalizada, com acabamento hidratado e aspecto saudável.",
+  },
+  {
+    image: "/images/destaque-rainha.jpg",
+    title: "Produção Especial",
+    subtitle: "Rainha Expo Samonte",
+    description: "Sobrancelhas e produção para eventos e concursos, com acabamento impecável em cada detalhe.",
   },
 ];
 
