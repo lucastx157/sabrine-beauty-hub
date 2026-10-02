@@ -62,6 +62,30 @@ export type Database = {
         }
         Relationships: []
       }
+      availability_overrides: {
+        Row: {
+          active: boolean | null
+          available_date: string
+          created_at: string | null
+          id: string
+          start_time: string
+        }
+        Insert: {
+          active?: boolean | null
+          available_date: string
+          created_at?: string | null
+          id?: string
+          start_time: string
+        }
+        Update: {
+          active?: boolean | null
+          available_date?: string
+          created_at?: string | null
+          id?: string
+          start_time?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string

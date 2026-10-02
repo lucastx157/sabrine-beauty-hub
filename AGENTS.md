@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture decisions
+
+- Date-specific availability lives in `availability_overrides` (one row per bookable slot start on a specific date). When a date has override rows, only those slots are offered and they appear immediately (bypassing the `advance_booking_days` window); the weekly `availability` rows apply to all other dates.
+
