@@ -71,8 +71,9 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
 
     const now = nowInBrazil();
     const earliest = addDays(now, advanceDays);
-    const from = data.from ? parseISO(data.from) : earliest;
-    const effectiveFrom = isAfter(from, earliest) ? from : earliest;
+    const today = startOfDay(now);
+    const from = data.from ? parseISO(data.from) : today;
+    const effectiveFrom = isBefore(from, today) ? today : from;
     const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 41);
 
     const { data: availability, error: availError } = await supabaseAdmin
@@ -89,6 +90,14 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
       .in("status", ["confirmed", "rescheduled"]);
     if (bookError) throw new Error(bookError.message);
 
+    const { data: overrides, error: overrideError } = await supabaseAdmin
+      .from("availability_overrides")
+      .select("available_date, start_time")
+      .eq("active", true)
+      .gte("available_date", formatBrazilDate(effectiveFrom))
+      .lte("available_date", formatBrazilDate(to));
+    if (overrideError) throw new Error(overrideError.message);
+
     const booked = (bookings ?? []).map((b) => ({
       date: b.booking_date,
       start: timeStrToMinutes(b.start_time),
@@ -102,27 +111,53 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
       const dateStr = formatBrazilDate(d);
       const daySlots = new Set<string>();
 
-      for (const a of availability ?? []) {
-        if (a.day_of_week !== dayOfWeek) continue;
-        const startMin = timeStrToMinutes(a.start_time);
-        const endMin = timeStrToMinutes(a.end_time);
-        const interval = a.slot_interval_minutes ?? 30;
+      const dateOverrides = (overrides ?? []).filter(
+        (o) => o.available_date === dateStr,
+      );
 
-        for (let t = startMin; t < endMin; t += interval) {
+      if (dateOverrides.length > 0) {
+        // Horários cadastrados individualmente para essa data: aparecem na
+        // hora, sem esperar a janela de antecedência semanal.
+        for (const o of dateOverrides) {
+          const t = timeStrToMinutes(o.start_time.slice(0, 5));
           const slotStart = set(d, {
             hours: Math.floor(t / 60),
             minutes: t % 60,
             seconds: 0,
             milliseconds: 0,
           });
-          if (isBefore(slotStart, earliest)) continue;
+          if (isBefore(slotStart, now)) continue;
 
-          const timeStr = minutesToTimeStr(t);
           const isBooked = booked.some(
             (b) => b.date === dateStr && t >= b.start && t < b.end,
           );
           if (!isBooked) {
-            daySlots.add(timeStr);
+            daySlots.add(minutesToTimeStr(t));
+          }
+        }
+      } else {
+        for (const a of availability ?? []) {
+          if (a.day_of_week !== dayOfWeek) continue;
+          const startMin = timeStrToMinutes(a.start_time);
+          const endMin = timeStrToMinutes(a.end_time);
+          const interval = a.slot_interval_minutes ?? 30;
+
+          for (let t = startMin; t < endMin; t += interval) {
+            const slotStart = set(d, {
+              hours: Math.floor(t / 60),
+              minutes: t % 60,
+              seconds: 0,
+              milliseconds: 0,
+            });
+            if (isBefore(slotStart, earliest)) continue;
+
+            const timeStr = minutesToTimeStr(t);
+            const isBooked = booked.some(
+              (b) => b.date === dateStr && t >= b.start && t < b.end,
+            );
+            if (!isBooked) {
+              daySlots.add(timeStr);
+            }
           }
         }
       }
