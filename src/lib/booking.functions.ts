@@ -50,6 +50,7 @@ const slotSchema = z.object({
   serviceId: z.string().uuid().optional(),
   from: z.string().date().optional(),
   to: z.string().date().optional(),
+  includeOccupied: z.boolean().optional(),
 });
 
 function timeStrToMinutes(timeStr: string) {
@@ -87,12 +88,12 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
       .select("booking_date, start_time, end_time, status")
       .gte("booking_date", formatBrazilDate(effectiveFrom))
       .lte("booking_date", formatBrazilDate(to))
-      .in("status", ["confirmed", "rescheduled"]);
+      .in("status", ["confirmed", "rescheduled", "pending_payment"]);
     if (bookError) throw new Error(bookError.message);
 
     const { data: overrides, error: overrideError } = await supabaseAdmin
       .from("availability_overrides")
-      .select("available_date, start_time")
+      .select("available_date, start_time, is_blocked")
       .eq("active", true)
       .gte("available_date", formatBrazilDate(effectiveFrom))
       .lte("available_date", formatBrazilDate(to));
@@ -104,12 +105,19 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
       end: timeStrToMinutes(b.end_time),
     }));
 
-    const slots: { date: string; time: string; serviceId?: string; label: string }[] = [];
+    const slots: {
+      date: string;
+      time: string;
+      serviceId?: string;
+      label: string;
+      occupied: boolean;
+    }[] = [];
 
     for (let d = new Date(effectiveFrom); !isBefore(to, d); d = addDays(d, 1)) {
       const dayOfWeek = d.getDay();
       const dateStr = formatBrazilDate(d);
       const daySlots = new Set<string>();
+      const occupiedSlots = new Set<string>();
 
       const dateOverrides = (overrides ?? []).filter(
         (o) => o.available_date === dateStr,
@@ -131,7 +139,9 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
           const isBooked = booked.some(
             (b) => b.date === dateStr && t >= b.start && t < b.end,
           );
-          if (!isBooked) {
+          if (o.is_blocked || isBooked) {
+            occupiedSlots.add(minutesToTimeStr(t));
+          } else {
             daySlots.add(minutesToTimeStr(t));
           }
         }
@@ -162,16 +172,25 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
         }
       }
 
-        Array.from(daySlots)
-          .sort((a, b) => timeStrToMinutes(a) - timeStrToMinutes(b))
-          .forEach((time) =>
-            slots.push({
-              date: dateStr,
-              time,
-              ...(data.serviceId ? { serviceId: data.serviceId } : {}),
-              label: `${formatDisplayDate(dateStr)} às ${time}`,
-            }),
-          );
+      const entries = [
+        ...Array.from(daySlots).map((time) => ({ time, occupied: false })),
+        ...(data.includeOccupied
+          ? Array.from(occupiedSlots)
+              .filter((t) => !daySlots.has(t))
+              .map((time) => ({ time, occupied: true }))
+          : []),
+      ];
+      entries
+        .sort((a, b) => timeStrToMinutes(a.time) - timeStrToMinutes(b.time))
+        .forEach(({ time, occupied }) =>
+          slots.push({
+            date: dateStr,
+            time,
+            ...(data.serviceId ? { serviceId: data.serviceId } : {}),
+            label: `${formatDisplayDate(dateStr)} às ${time}`,
+            occupied,
+          }),
+        );
     }
 
     return slots;
@@ -183,6 +202,15 @@ const createBookingSchema = z.object({
   time: z.string().regex(/^\d{2}:\d{2}$/),
   clientName: z.string().min(2).max(100),
   clientPhone: z.string().min(10).max(20).optional(),
+  notes: z.string().max(500).optional(),
+  // Comprovante Pix (obrigatório quando vindo do site; a IA reserva sem comprovante)
+  proof: z
+    .object({
+      base64: z.string().max(7_000_000),
+      contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]),
+      fileName: z.string().max(200),
+    })
+    .optional(),
 });
 
 export const createBooking = createServerFn({ method: "POST" })
@@ -193,7 +221,7 @@ export const createBooking = createServerFn({ method: "POST" })
 
     const { data: service, error: serviceError } = await supabaseAdmin
       .from("services")
-      .select("name, duration_min, duration_max")
+      .select("name, duration_min, duration_max, price_min")
       .eq("id", data.serviceId)
       .single();
     if (serviceError || !service) throw new Error("Serviço não encontrado");
@@ -208,19 +236,33 @@ export const createBooking = createServerFn({ method: "POST" })
     const slots = await getAvailableSlots({
       data: { serviceId: data.serviceId, from: data.date, to: data.date },
     });
-    const isAvailable = slots.some((s) => s.time === data.time);
+    const isAvailable = slots.some((s) => s.time === data.time && !s.occupied);
     if (!isAvailable) throw new Error("Esse horário não está mais disponível. Escolha outro, por favor.");
+
+    let proofPath: string | null = null;
+    if (data.proof) {
+      const ext = data.proof.fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+      proofPath = `${data.date}/${crypto.randomUUID()}.${ext}`;
+      const bytes = Uint8Array.from(atob(data.proof.base64), (c) => c.charCodeAt(0));
+      const { error: upErr } = await supabaseAdmin.storage
+        .from("payment-proofs")
+        .upload(proofPath, bytes, { contentType: data.proof.contentType });
+      if (upErr) throw new Error("Não foi possível enviar o comprovante. Tente novamente.");
+    }
 
     const { data: booking, error } = await supabaseAdmin
       .from("bookings")
       .insert({
+        amount_cents: service.price_min ?? null,
+        payment_proof_path: proofPath,
+        notes: data.notes?.trim() || null,
         service_id: data.serviceId,
         client_name: data.clientName.trim(),
         client_phone: data.clientPhone?.replace(/\D/g, "") ?? null,
         booking_date: data.date,
         start_time: data.time,
         end_time: endTime,
-        status: "confirmed",
+        status: "pending_payment",
       })
       .select("id, booking_date, start_time, services(name)")
       .single();
@@ -259,7 +301,7 @@ export const getMyBookings = createServerFn({ method: "POST" })
       .from("bookings")
       .select("*, services(name)")
       .eq("client_phone", digits)
-      .or(`status.eq.confirmed,status.eq.rescheduled`)
+      .or(`status.eq.confirmed,status.eq.rescheduled,status.eq.pending_payment`)
       .gte("booking_date", formatBrazilDate(today))
       .order("booking_date", { ascending: true })
       .order("start_time", { ascending: true });
@@ -357,7 +399,7 @@ export const rescheduleBooking = createServerFn({ method: "POST" })
     const slots = await getAvailableSlots({
       data: { serviceId: booking.service_id!, from: data.newDate, to: data.newDate },
     });
-    const isAvailable = slots.some((s) => s.time === data.newTime);
+    const isAvailable = slots.some((s) => s.time === data.newTime && !s.occupied);
     if (!isAvailable) throw new Error("O novo horário não está mais disponível. Escolha outro, por favor.");
 
     const { error } = await supabaseAdmin
