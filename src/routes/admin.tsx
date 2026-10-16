@@ -169,7 +169,7 @@ function AdminDashboard() {
             />
           </TabsContent>
           <TabsContent value="bookings">
-            <BookingsPanel bookings={bookings} />
+            <BookingsPanel bookings={bookings} onChanged={() => void getAdminBookings({ data: undefined }).then(setBookings)} />
           </TabsContent>
           <TabsContent value="config">
             <ConfigPanel config={config} onSaved={load} />
@@ -324,7 +324,30 @@ function AvailabilityPanel({
   );
 }
 
-function BookingsPanel({ bookings }: { bookings: Awaited<ReturnType<typeof getAdminBookings>> }) {
+const statusLabels: Record<string, string> = {
+  pending_payment: "Aguardando confirmação do pagamento",
+  confirmed: "Confirmado",
+  cancelled: "Cancelado",
+  rescheduled: "Reagendado",
+  no_show: "Faltou",
+};
+
+function BookingsPanel({
+  bookings,
+  onChanged,
+}: {
+  bookings: Awaited<ReturnType<typeof getAdminBookings>>;
+  onChanged: () => void;
+}) {
+  const setStatus = async (id: string, status: "confirmed" | "cancelled") => {
+    try {
+      await updateBookingStatus({ data: { id, status } });
+      toast.success(status === "confirmed" ? "Pagamento confirmado" : "Agendamento cancelado");
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao atualizar");
+    }
+  };
   return (
     <Card className="p-6 shadow-card">
       <h2 className="mb-4 text-lg font-semibold text-foreground">Próximos agendamentos</h2>
@@ -343,6 +366,20 @@ function BookingsPanel({ bookings }: { bookings: Awaited<ReturnType<typeof getAd
                     {formatDisplayDate(b.booking_date)} às {b.start_time}
                   </p>
                   {b.client_phone && <p className="text-xs text-muted-foreground">{b.client_phone}</p>}
+                  {b.notes && <p className="text-xs text-muted-foreground">Obs.: {b.notes}</p>}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {b.proofUrl && (
+                      <Button asChild size="sm" variant="outline">
+                        <a href={b.proofUrl} target="_blank" rel="noreferrer">Ver comprovante Pix</a>
+                      </Button>
+                    )}
+                    {b.status === "pending_payment" && (
+                      <>
+                        <Button size="sm" onClick={() => setStatus(b.id, "confirmed")}>Confirmar pagamento</Button>
+                        <Button size="sm" variant="outline" onClick={() => setStatus(b.id, "cancelled")}>Cancelar</Button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <span
                   className={`mt-2 inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium sm:mt-0 ${
@@ -353,7 +390,7 @@ function BookingsPanel({ bookings }: { bookings: Awaited<ReturnType<typeof getAd
                         : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                   }`}
                 >
-                  {b.status}
+                  {statusLabels[b.status] ?? b.status}
                 </span>
               </div>
             </div>
