@@ -19,6 +19,7 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
+import { ShieldCheck, Copy, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ const servicesQueryOptions = queryOptions({
 
 const slotsQueryOptions = queryOptions({
   queryKey: ["slots", "all"],
-  queryFn: () => getAvailableSlots({ data: {} }),
+  queryFn: () => getAvailableSlots({ data: { includeOccupied: true } }),
 });
 
 export const Route = createFileRoute("/")({
@@ -44,13 +45,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Agende online design de sobrancelhas, henna, coloração, hydra gloss e brow lamination com a Sabrine Beauty. Veja os dias e horários liberados e confirme no WhatsApp.",
+          "Agende online design de sobrancelhas, henna, coloração, hydra gloss e brow lamination com a Sabrine Beauty. Veja os horários livres e garanta sua vaga com pagamento antecipado via Pix.",
       },
       { property: "og:title", content: "Sabrine Beauty | Design de Sobrancelhas e Agendamento Online" },
       {
         property: "og:description",
         content:
-          "Escolha o procedimento, o dia e o horário. A confirmação chega pronta no WhatsApp da Sabrine.",
+          "Escolha o procedimento, o dia e o horário. Agendamento somente pelo site, com pagamento antecipado via Pix.",
       },
       { property: "og:type", content: "website" },
       {
@@ -115,6 +116,33 @@ function weekKey(dateStr: string) {
   const fmt = (dt: Date) =>
     `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
   return `Semana de ${fmt(monday)} a ${fmt(sunday)}`;
+}
+
+const PIX_KEY = "37998598753";
+const PIX_DISPLAY = "(37) 99859-8753";
+
+function PixNotice({ className = "" }: { className?: string }) {
+  return (
+    <div className={`rounded-2xl border-2 border-primary/60 bg-primary/10 p-5 text-left shadow-gold ${className}`}>
+      <p className="flex items-center gap-2 font-semibold text-foreground">
+        <ShieldCheck className="h-5 w-5 shrink-0 text-primary" /> Importante
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-foreground">
+        Agendamentos <strong>somente pelo site</strong>, com <strong>pagamento antecipado via Pix</strong>.
+        Isso evita faltas e transtornos e garante a sua vaga.{" "}
+        <strong>Horário sem pagamento não é reservado.</strong>
+      </p>
+    </div>
+  );
+}
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
 }
 
 const awards = [
@@ -339,6 +367,7 @@ function HomePage() {
             <p className="mt-4 text-muted-foreground">
               Toque no procedimento desejado para escolher o dia e o horário do seu atendimento.
             </p>
+            <PixNotice className="mx-auto mt-8 max-w-2xl" />
           </div>
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
@@ -356,6 +385,9 @@ function HomePage() {
                     <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
                   </p>
                   <p className="mt-4 flex-1 text-sm text-muted-foreground">{service.description}</p>
+                  <p className="mt-4 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
+                    Somente pelo site · Pix antecipado do valor total · Sem pagamento, sem reserva
+                  </p>
                   <Button
                     variant="outline"
                     className="mt-6 rounded-full group/btn"
@@ -401,6 +433,7 @@ function HomePage() {
             <p className="mt-4 text-muted-foreground">
               Os horários são liberados pela Sabrine com uma semana de antecedência.
             </p>
+            <PixNotice className="mx-auto mt-8 max-w-2xl" />
           </div>
           <BookingFlow
             services={services}
@@ -649,6 +682,8 @@ function BookingFlow({
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [proof, setProof] = useState<File | null>(null);
+  const [done, setDone] = useState<string | null>(null);
 
   const service = services.find((s) => s.id === selectedServiceId) ?? null;
 
@@ -663,14 +698,14 @@ function BookingFlow({
     for (const [d, list] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
       const key = weekKey(d);
       const arr = grouped.get(key) ?? [];
-      arr.push({ date: d, count: list.length });
+      arr.push({ date: d, count: list.filter((x) => !x.occupied).length });
       grouped.set(key, arr);
     }
     return [...grouped.entries()];
   }, [slots]);
 
   const dayTimes = useMemo(
-    () => (slots ?? []).filter((s) => s.date === date).map((s) => s.time),
+    () => (slots ?? []).filter((s) => s.date === date).map((s) => ({ t: s.time, occupied: s.occupied })),
     [slots, date],
   );
 
@@ -679,37 +714,59 @@ function BookingFlow({
       toast.error("Preencha procedimento, dia, horário e seu nome.");
       return;
     }
+    if (phone.replace(/\D/g, "").length < 10) {
+      toast.error("Informe seu WhatsApp com DDD.");
+      return;
+    }
+    if (!proof) {
+      toast.error("Anexe o comprovante do Pix para reservar o horário.");
+      return;
+    }
+    if (proof.size > 5 * 1024 * 1024) {
+      toast.error("O comprovante deve ter no máximo 5 MB.");
+      return;
+    }
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"] as const;
+    const contentType = allowed.find((t) => t === proof.type);
+    if (!contentType) {
+      toast.error("Envie o comprovante em imagem (JPG, PNG) ou PDF.");
+      return;
+    }
     setSaving(true);
     try {
+      const base64 = await fileToBase64(proof);
       await createBooking({
         data: {
           serviceId: service.id,
           date,
           time,
           clientName: name.trim(),
-          ...(phone.replace(/\D/g, "").length >= 10 ? { clientPhone: phone } : {}),
+          clientPhone: phone,
           ...(note.trim() ? { notes: note.trim() } : {}),
+          proof: { base64, contentType, fileName: proof.name },
         },
       });
       const parts = parseDateParts(date);
-      const message =
-        `Olá Sabrine! Acabei de agendar pelo site.\n\n` +
-        `Nome: ${name.trim()}\n` +
-        `Procedimento: ${service.name}\n` +
-        `Valor: ${priceRange(service)}\n` +
-        `Dia: ${parts.weekDay}, ${parts.full}\n` +
-        `Horário: ${time}` +
-        (note.trim() ? `\nObservação: ${note.trim()}` : "");
-      toast.success("Agendamento confirmado! Abrindo o WhatsApp...");
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank");
+      setDone(`${service.name} — ${parts.weekDay}, ${parts.full} às ${time}`);
+      toast.success("Horário reservado! Aguardando confirmação do pagamento.");
       setDate(null);
       setTime(null);
       setNote("");
+      setProof(null);
       await refetch();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível agendar.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const copyPix = async () => {
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+      toast.success("Chave Pix copiada!");
+    } catch {
+      toast.error(`Copie manualmente: ${PIX_KEY}`);
     }
   };
 
@@ -747,7 +804,7 @@ function BookingFlow({
           <p className="text-sm text-muted-foreground">Carregando dias disponíveis...</p>
         ) : weeks.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nenhum horário liberado no momento. Fale com a Sabrine no WhatsApp.
+            Nenhum horário liberado no momento. Volte em breve.
           </p>
         ) : (
           <div className="space-y-5">
@@ -769,7 +826,9 @@ function BookingFlow({
                           setTime(null);
                         }}
                         className={`flex w-16 flex-col items-center rounded-xl border py-2 text-xs transition-colors ${
-                          active
+                          d.count === 0 && !active
+                            ? "border-border bg-muted text-muted-foreground line-through"
+                            : active
                             ? "border-primary bg-primary text-primary-foreground shadow-gold"
                             : "border-border bg-background text-foreground hover:border-primary/50"
                         }`}
@@ -777,7 +836,9 @@ function BookingFlow({
                         <span>{p.weekDay}</span>
                         <span className="text-lg font-semibold">{p.day}</span>
                         <span>{p.month}</span>
-                        <span className="mt-1 opacity-70">{d.count} vagas</span>
+                        <span className="mt-1 opacity-70">
+                          {d.count === 0 ? "Esgotado" : `${d.count} ${d.count === 1 ? "vaga" : "vagas"}`}
+                        </span>
                       </button>
                     );
                   })}
@@ -795,18 +856,28 @@ function BookingFlow({
           <p className="text-sm text-muted-foreground">Escolha um dia para ver os horários livres.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {dayTimes.map((t) => (
+            {dayTimes.every((x) => x.occupied) && (
+              <p className="w-full rounded-lg bg-muted px-3 py-2 text-sm font-medium text-muted-foreground">
+                Agenda cheia neste dia — todos os horários já foram reservados.
+              </p>
+            )}
+            {dayTimes.map(({ t, occupied }) => (
               <button
                 key={t}
                 type="button"
+                disabled={occupied}
                 onClick={() => setTime(t)}
+                title={occupied ? "Horário já reservado" : undefined}
                 className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  time === t
-                    ? "border-primary bg-primary text-primary-foreground shadow-gold"
-                    : "border-border bg-background text-foreground hover:border-primary/50"
+                  occupied
+                    ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-60"
+                    : time === t
+                      ? "border-primary bg-primary text-primary-foreground shadow-gold"
+                      : "border-border bg-background text-foreground hover:border-primary/50"
                 }`}
               >
                 {t}
+                {occupied && <span className="ml-1 text-[10px] no-underline">ocupado</span>}
               </button>
             ))}
           </div>
@@ -863,14 +934,60 @@ function BookingFlow({
           </dl>
         </div>
 
+      </Card>
+
+      {/* Step 5 - Pix */}
+      <Card className="border-2 border-primary/50 bg-card/80 p-6 shadow-gold">
+        <StepBadge n={5} label="Pagamento antecipado via Pix" />
+        <p className="-mt-2 mb-4 text-sm text-muted-foreground">
+          Pague o <strong className="text-foreground">valor total do procedimento</strong> para garantir sua vaga.
+          Horário sem pagamento não é reservado.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl bg-secondary/40 p-4">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Valor a pagar</p>
+            <p className="mt-1 font-serif text-3xl font-semibold text-primary">
+              {service?.price_min != null ? formatCurrencyCents(service.price_min) : "—"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{service?.name ?? "Escolha um procedimento"}</p>
+          </div>
+          <div className="rounded-xl border border-primary/40 bg-background p-4">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Chave Pix (celular)</p>
+            <p className="mt-1 font-mono text-2xl font-bold tracking-wide text-foreground">{PIX_KEY}</p>
+            <p className="text-xs text-muted-foreground">{PIX_DISPLAY} · Recebedora: <strong className="text-foreground">Sabrine</strong></p>
+            <Button type="button" variant="outline" size="sm" className="mt-3 rounded-full" onClick={copyPix}>
+              <Copy className="mr-2 h-4 w-4" /> Copiar chave Pix
+            </Button>
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="mb-1 block text-sm text-muted-foreground">Comprovante do Pix (imagem ou PDF)</label>
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/50 bg-background px-4 py-3 text-sm text-foreground hover:bg-primary/5">
+            <Upload className="h-4 w-4 text-primary" />
+            <span className="truncate">{proof ? proof.name : "Toque para anexar o comprovante"}</span>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              className="hidden"
+              onChange={(e) => setProof(e.target.files?.[0] ?? null)}
+            />
+          </label>
+        </div>
+
         <Button className="mt-6 w-full rounded-full" size="lg" disabled={saving} onClick={handleConfirm}>
-          <MessageCircle className="mr-2 h-4 w-4" />
-          {saving ? "Confirmando..." : "Confirmar agendamento no WhatsApp"}
+          <Check className="mr-2 h-4 w-4" />
+          {saving ? "Enviando..." : "Já paguei - confirmar agendamento"}
         </Button>
         <p className="mt-3 text-center text-xs text-muted-foreground">
-          O horário é reservado na agenda e a mensagem é gerada automaticamente com procedimento,
-          valor, dia e horário.
+          Seu horário fica reservado com status <strong>aguardando confirmação do pagamento</strong> até a
+          Sabrine conferir o comprovante.
         </p>
+        {done && (
+          <div className="mt-4 rounded-xl border border-primary/50 bg-primary/10 p-4 text-sm text-foreground">
+            <p className="font-semibold">Horário reservado: {done}</p>
+            <p className="mt-1 text-muted-foreground">Status: aguardando confirmação do pagamento.</p>
+          </div>
+        )}
         <p className="mt-2 flex items-start gap-2 text-center text-xs text-muted-foreground">
           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           Cancelamento ou reagendamento apenas até 24 horas antes do horário marcado — a vaga é

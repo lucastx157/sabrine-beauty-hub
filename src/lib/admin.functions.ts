@@ -102,12 +102,23 @@ export const getAdminBookings = createServerFn({ method: "GET" })
       .order("booking_date", { ascending: true })
       .order("start_time", { ascending: true });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return Promise.all(
+      (data ?? []).map(async (b) => {
+        let proofUrl: string | null = null;
+        if (b.payment_proof_path) {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("payment-proofs")
+            .createSignedUrl(b.payment_proof_path, 60 * 60);
+          proofUrl = signed?.signedUrl ?? null;
+        }
+        return { ...b, proofUrl };
+      }),
+    );
   });
 
 const updateBookingStatusSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(["confirmed", "cancelled", "rescheduled", "no_show"]),
+  status: z.enum(["confirmed", "cancelled", "rescheduled", "no_show", "pending_payment"]),
 });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
