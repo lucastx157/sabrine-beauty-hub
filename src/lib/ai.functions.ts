@@ -75,25 +75,6 @@ const tools = [
   {
     type: "function" as const,
     function: {
-      name: "create_booking",
-      description:
-        "Cria um agendamento. Só chame depois de confirmar com a cliente o serviço, data, horário e nome. O telefone é opcional.",
-      parameters: {
-        type: "object" as const,
-        properties: {
-          service_id: { type: "string", description: "UUID do serviço" },
-          date: { type: "string", description: "Data no formato YYYY-MM-DD" },
-          time: { type: "string", description: "Horário no formato HH:mm" },
-          client_name: { type: "string" },
-          client_phone: { type: "string" },
-        },
-        required: ["service_id", "date", "time", "client_name"],
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
       name: "get_cancellation_policy",
       description: "Retorna a política de cancelamento e reagendamento.",
       parameters: { type: "object" as const, properties: {}, required: [] },
@@ -172,7 +153,7 @@ async function executeTool(call: {
         const from =
           typeof args["date_from"] === "string" && args["date_from"]
             ? args["date_from"]
-            : formatBrazilDate(addDays(nowInBrazil(), 7));
+            : formatBrazilDate(nowInBrazil());
         const to =
           typeof args["date_to"] === "string" && args["date_to"]
             ? args["date_to"]
@@ -255,12 +236,15 @@ export const chatWithAssistant = createServerFn({ method: "POST" })
 Regras importantes:
 - Use português brasileiro, tom acolhedor, elegante e direto.
 - Nunca invente serviços, preços ou horários. Use as ferramentas disponíveis.
-- Os horários só aparecem com antecedência mínima de 7 dias. Se a cliente quiser antes disso, explique gentilmente que a agenda da semana seguinte abre com uma semana de antecedência.
-- Para agendar, confirme com a cliente: serviço, data, horário e nome. O telefone é opcional.
+- Os horários livres vêm SEMPRE da ferramenta get_available_slots (só retorna horários realmente livres). Nunca ofereça outro horário.
+- Semana de 19/10 a 25/10: só há vagas na segunda 19/10 (08:30, 09:00, 09:30 e 11:00) e na quinta 22/10 (07:30, 08:00, 08:30, 15:00, 16:00, 17:00, 18:00 e 19:00), salvo se já tiverem sido reservadas — confirme com a ferramenta. Terça, quarta, sexta, sábado e domingo dessa semana estão com agenda cheia.
+- REGRA DE AGENDAMENTO: agendamentos SOMENTE pelo site, na seção "Agendamento", com pagamento antecipado via Pix do VALOR TOTAL do procedimento. Isso evita faltas e transtornos e garante a vaga. Horário sem pagamento não é reservado.
+- Pix: chave celular 37998598753, recebedora Sabrine. A cliente paga, anexa o comprovante no site e clica em "Já paguei - confirmar agendamento"; o horário fica "aguardando confirmação do pagamento" até a Sabrine conferir.
+- Você NÃO cria agendamentos e não confirma horários por WhatsApp: ajude a escolher procedimento e horário e oriente a cliente a concluir pelo site.
 - Seja transparente sobre a política de cancelamento/reagendamento (até 24h antes).
 - Não peça informações desnecessárias.
 
-Serviços: consulte via get_services. Horários: consulte via get_available_slots. Política: consulte via get_cancellation_policy.`;
+Serviços: consulte via get_services. Horários: consulte via get_available_slots. Política: consulte via get_cancellation_policy (cancelamento/reagendamento só até 24h antes).`;
 
     const modelMessages: ChatMessage[] = [
       { role: "system", content: system },
