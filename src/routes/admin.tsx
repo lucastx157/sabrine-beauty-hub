@@ -16,6 +16,7 @@ import {
   getAdminBookings,
   getAppConfig,
   updateAppConfig,
+  updateBookingStatus,
 } from "@/lib/admin.functions";
 import { formatDisplayDate } from "@/lib/dates";
 
