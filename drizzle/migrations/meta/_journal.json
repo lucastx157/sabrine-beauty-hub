@@ -15,6 +15,13 @@
       "when": 1790967657954,
       "tag": "0001_availability_overrides",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792184898303,
+      "tag": "0002_pix_payment_and_blocked_slots",
+      "breakpoints": true
     }
   ]
 }

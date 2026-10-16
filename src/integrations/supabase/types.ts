@@ -68,6 +68,7 @@ export type Database = {
           available_date: string
           created_at: string | null
           id: string
+          is_blocked: boolean
           start_time: string
         }
         Insert: {
@@ -75,6 +76,7 @@ export type Database = {
           available_date: string
           created_at?: string | null
           id?: string
+          is_blocked?: boolean
           start_time: string
         }
         Update: {
@@ -82,12 +84,14 @@ export type Database = {
           available_date?: string
           created_at?: string | null
           id?: string
+          is_blocked?: boolean
           start_time?: string
         }
         Relationships: []
       }
       bookings: {
         Row: {
+          amount_cents: number | null
           booking_date: string
           client_email: string | null
           client_name: string
@@ -95,13 +99,16 @@ export type Database = {
           created_at: string | null
           end_time: string
           id: string
+          notes: string | null
           original_booking_id: string | null
+          payment_proof_path: string | null
           service_id: string | null
           start_time: string
           status: string
           updated_at: string | null
         }
         Insert: {
+          amount_cents?: number | null
           booking_date: string
           client_email?: string | null
           client_name: string
@@ -109,13 +116,16 @@ export type Database = {
           created_at?: string | null
           end_time: string
           id?: string
+          notes?: string | null
           original_booking_id?: string | null
+          payment_proof_path?: string | null
           service_id?: string | null
           start_time: string
           status?: string
           updated_at?: string | null
         }
         Update: {
+          amount_cents?: number | null
           booking_date?: string
           client_email?: string | null
           client_name?: string
@@ -123,7 +133,9 @@ export type Database = {
           created_at?: string | null
           end_time?: string
           id?: string
+          notes?: string | null
           original_booking_id?: string | null
+          payment_proof_path?: string | null
           service_id?: string | null
           start_time?: string
           status?: string
