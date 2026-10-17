@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as MeusAgendamentosRouteImport } from './routes/meus-agendamentos'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
@@ -23,11 +22,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MeusAgendamentosRoute = MeusAgendamentosRouteImport.update({
-  id: '/meus-agendamentos',
-  path: '/meus-agendamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSetupRoute = AdminSetupRouteImport.update({
@@ -45,14 +39,12 @@ const ApiPublicWhatsappWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/meus-agendamentos': typeof MeusAgendamentosRoute
   '/admin/setup': typeof AdminSetupRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/meus-agendamentos': typeof MeusAgendamentosRoute
   '/admin/setup': typeof AdminSetupRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -60,30 +52,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/meus-agendamentos': typeof MeusAgendamentosRoute
   '/admin/setup': typeof AdminSetupRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/meus-agendamentos'
-    | '/admin/setup'
-    | '/api/public/whatsapp/webhook'
+  fullPaths: '/' | '/admin' | '/admin/setup' | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/meus-agendamentos'
-    | '/admin/setup'
-    | '/api/public/whatsapp/webhook'
+  to: '/' | '/admin' | '/admin/setup' | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
     | '/admin'
-    | '/meus-agendamentos'
     | '/admin/setup'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
@@ -91,7 +71,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  MeusAgendamentosRoute: typeof MeusAgendamentosRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -109,13 +88,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meus-agendamentos': {
-      id: '/meus-agendamentos'
-      path: '/meus-agendamentos'
-      fullPath: '/meus-agendamentos'
-      preLoaderRoute: typeof MeusAgendamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/setup': {
@@ -148,7 +120,6 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  MeusAgendamentosRoute: MeusAgendamentosRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

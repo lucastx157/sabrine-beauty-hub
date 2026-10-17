@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Phone,
   Instagram,
-  Check,
   CalendarDays,
   Crown,
   GraduationCap,
