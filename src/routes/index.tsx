@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions, useQuery } from "@tanstack/react-query";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
 import {
   Send,
   Clock,
@@ -9,7 +9,6 @@ import {
   MessageCircle,
   Phone,
   Instagram,
-  Check,
   CalendarDays,
   Crown,
   GraduationCap,
@@ -19,11 +18,10 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import { ShieldCheck, Copy, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { listServices, getAvailableSlots, createBooking } from "@/lib/booking.functions";
+import { listServices } from "@/lib/booking.functions";
 import { chatWithAssistant } from "@/lib/ai.functions";
 import { formatCurrencyCents } from "@/lib/dates";
 import { toast } from "sonner";
@@ -33,25 +31,20 @@ const servicesQueryOptions = queryOptions({
   queryFn: () => listServices({ data: undefined }),
 });
 
-const slotsQueryOptions = queryOptions({
-  queryKey: ["slots", "all"],
-  queryFn: () => getAvailableSlots({ data: { includeOccupied: true } }),
-});
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Sabrine Beauty | Design de Sobrancelhas e Agendamento Online" },
+      { title: "Sabrine Beauty | Design de Sobrancelhas em Minas Gerais" },
       {
         name: "description",
         content:
-          "Agende online design de sobrancelhas, henna, coloração, hydra gloss e brow lamination com a Sabrine Beauty. Veja os horários livres e garanta sua vaga com pagamento antecipado via Pix.",
+          "Conheça a Sabrine Beauty: design de sobrancelhas, henna, coloração, hydra gloss e brow lamination, prêmios e galeria de resultados.",
       },
-      { property: "og:title", content: "Sabrine Beauty | Design de Sobrancelhas e Agendamento Online" },
+      { property: "og:title", content: "Sabrine Beauty | Design de Sobrancelhas em Minas Gerais" },
       {
         property: "og:description",
         content:
-          "Escolha o procedimento, o dia e o horário. Agendamento somente pelo site, com pagamento antecipado via Pix.",
+          "História, prêmios, galeria e serviços da Sabrine Beauty. Agende pela agenda semanal online.",
       },
       { property: "og:type", content: "website" },
       {
@@ -70,6 +63,7 @@ export const Route = createFileRoute("/")({
 });
 
 const WHATSAPP_NUMBER = "5537998598753";
+const AGENDA_URL = "https://claude.ai/artifact/9cetsC7qcS4TCiR9EXTsqz";
 const WHATSAPP_DISPLAY = "(37) 99859-8753";
 const INSTAGRAM_URL = "https://instagram.com/sabrine_sobrancelhas";
 
@@ -77,7 +71,6 @@ const shortWeekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const shortMonths = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
 type Service = Awaited<ReturnType<typeof listServices>>[number];
-type Slot = Awaited<ReturnType<typeof getAvailableSlots>>[number];
 
 function priceRange(service: Service) {
   const min = formatCurrencyCents(service.price_min ?? 0);
@@ -92,57 +85,6 @@ function durationRange(service: Service) {
     return `${service.duration_min} a ${service.duration_max} min`;
   }
   return `${service.duration_min} min`;
-}
-
-function parseDateParts(dateStr: string) {
-  const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
-  const date = new Date(y!, m! - 1, d!);
-  return {
-    weekDay: shortWeekDays[date.getDay()]!,
-    day: String(d),
-    month: shortMonths[m! - 1]!,
-    full: `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}`,
-  };
-}
-
-function weekKey(dateStr: string) {
-  const [y, m, d] = dateStr.split("-").map((v) => parseInt(v, 10));
-  const date = new Date(y!, m! - 1, d!);
-  const monday = new Date(date);
-  const offset = (date.getDay() + 6) % 7;
-  monday.setDate(date.getDate() - offset);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  const fmt = (dt: Date) =>
-    `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
-  return `Semana de ${fmt(monday)} a ${fmt(sunday)}`;
-}
-
-const PIX_KEY = "37998598753";
-const PIX_DISPLAY = "(37) 99859-8753";
-
-function PixNotice({ className = "" }: { className?: string }) {
-  return (
-    <div className={`rounded-2xl border-2 border-primary/60 bg-primary/10 p-5 text-left shadow-gold ${className}`}>
-      <p className="flex items-center gap-2 font-semibold text-foreground">
-        <ShieldCheck className="h-5 w-5 shrink-0 text-primary" /> Importante
-      </p>
-      <p className="mt-2 text-sm leading-relaxed text-foreground">
-        Agendamentos <strong>somente pelo site</strong>, com <strong>pagamento antecipado via Pix</strong>.
-        Isso evita faltas e transtornos e garante a sua vaga.{" "}
-        <strong>Horário sem pagamento não é reservado.</strong>
-      </p>
-    </div>
-  );
-}
-
-function fileToBase64(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }
 
 const awards = [
@@ -218,12 +160,6 @@ const specialServices = [
 
 function HomePage() {
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
-
-  const chooseService = (id: string) => {
-    setSelectedServiceId(id);
-    document.getElementById("agendamento")?.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -279,7 +215,7 @@ function HomePage() {
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
               <Button asChild size="lg" className="rounded-full px-8 shadow-gold">
-                <a href="#agendamento">Agendar agora</a>
+                <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">Agendar agora</a>
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-full px-8">
                 <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
@@ -367,7 +303,6 @@ function HomePage() {
             <p className="mt-4 text-muted-foreground">
               Toque no procedimento desejado para escolher o dia e o horário do seu atendimento.
             </p>
-            <PixNotice className="mx-auto mt-8 max-w-2xl" />
           </div>
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((service) => (
@@ -385,16 +320,11 @@ function HomePage() {
                     <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
                   </p>
                   <p className="mt-4 flex-1 text-sm text-muted-foreground">{service.description}</p>
-                  <p className="mt-4 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
-                    Somente pelo site · Pix antecipado do valor total · Sem pagamento, sem reserva
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-6 rounded-full group/btn"
-                    onClick={() => chooseService(service.id)}
-                  >
-                    Escolher horário
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                  <Button asChild variant="outline" className="mt-6 rounded-full group/btn">
+                    <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">
+                      Escolher horário
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                    </a>
                   </Button>
                 </div>
               </Card>
@@ -411,35 +341,46 @@ function HomePage() {
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Conte como são suas sobrancelhas ou lábios e o que você deseja. Nossa assistente de
-                  IA indica o procedimento ideal e mostra os horários livres.
+                  IA indica o procedimento ideal para você.
                 </p>
               </div>
               <Button asChild className="mt-6 rounded-full">
-                <a href="#assistente">Descobrir meu procedimento</a>
+                <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">Descobrir meu procedimento</a>
               </Button>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Booking */}
-      <section id="agendamento" className="relative py-32 bg-secondary/30">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-12 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Agendamento online</span>
+      {/* Weekly agenda */}
+      <section id="agendamento" className="relative overflow-hidden py-32 bg-secondary/30">
+        <div className="light-orb top-0 left-1/4 h-64 w-64 bg-gold/20" />
+        <div className="relative mx-auto max-w-3xl px-6">
+          <Card className="glass-card border border-primary/40 p-10 text-center shadow-gold md:p-14">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-gold-shine text-primary-foreground shadow-gold">
+              <CalendarDays className="h-7 w-7" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Agendamento</span>
             <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Escolha seu dia e horário
+              Agende pela nossa <span className="text-gradient-gold italic">agenda semanal</span>
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Os horários são liberados pela Sabrine com uma semana de antecedência.
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+              Querida cliente, a partir de agora os agendamentos da Sabrine Beauty são feitos somente
+              pela nossa agenda semanal online. Lá você vê os horários disponíveis, escolhe o
+              procedimento, faz o pagamento antecipado via Pix e envia o comprovante pelo WhatsApp.
+              A Sabrine confirma o seu horário em até 2 horas.
             </p>
-            <PixNotice className="mx-auto mt-8 max-w-2xl" />
-          </div>
-          <BookingFlow
-            services={services}
-            selectedServiceId={selectedServiceId}
-            onSelectService={setSelectedServiceId}
-          />
+            <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+              Essa mudança é para atender cada cliente com mais calma, carinho e pontualidade.
+              Agradecemos de coração pela compreensão e pela confiança!
+            </p>
+            <Button asChild size="lg" className="mt-10 h-14 rounded-full px-10 text-base shadow-gold">
+              <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">
+                Abrir agenda e marcar meu horário
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
+            </Button>
+          </Card>
         </div>
       </section>
 
@@ -537,7 +478,7 @@ function HomePage() {
               Tire suas dúvidas com a IA
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Converse com nossa assistente para escolher o procedimento e o melhor horário disponível.
+              Converse com nossa assistente para tirar dúvidas e descobrir o procedimento ideal.
             </p>
           </div>
           <BookingAssistant />
@@ -581,21 +522,6 @@ function HomePage() {
               </Card>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* My bookings shortcut */}
-      <section className="border-t border-border bg-card/80">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-12 md:flex-row">
-          <div>
-            <h3 className="text-xl font-semibold text-card-foreground">Já tem um agendamento?</h3>
-            <p className="text-sm text-muted-foreground">
-              Consulte, cancele ou reagende com seu telefone (até 24h antes do atendimento).
-            </p>
-          </div>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/meus-agendamentos">Meus agendamentos</Link>
-          </Button>
         </div>
       </section>
 
@@ -655,355 +581,12 @@ function HomePage() {
   );
 }
 
-function StepBadge({ n, label }: { n: number; label: string }) {
-  return (
-    <div className="mb-4 flex items-center gap-3">
-      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-        {n}
-      </span>
-      <h3 className="text-base font-semibold text-card-foreground">{label}</h3>
-    </div>
-  );
-}
-
-function BookingFlow({
-  services,
-  selectedServiceId,
-  onSelectService,
-}: {
-  services: Service[];
-  selectedServiceId: string | null;
-  onSelectService: (id: string) => void;
-}) {
-  const { data: slots, isLoading, refetch } = useQuery(slotsQueryOptions);
-  const [date, setDate] = useState<string | null>(null);
-  const [time, setTime] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [proof, setProof] = useState<File | null>(null);
-  const [done, setDone] = useState<string | null>(null);
-
-  const service = services.find((s) => s.id === selectedServiceId) ?? null;
-
-  const weeks = useMemo(() => {
-    const byDate = new Map<string, Slot[]>();
-    for (const slot of slots ?? []) {
-      const list = byDate.get(slot.date) ?? [];
-      list.push(slot);
-      byDate.set(slot.date, list);
-    }
-    const grouped = new Map<string, { date: string; count: number }[]>();
-    for (const [d, list] of [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-      const key = weekKey(d);
-      const arr = grouped.get(key) ?? [];
-      arr.push({ date: d, count: list.filter((x) => !x.occupied).length });
-      grouped.set(key, arr);
-    }
-    return [...grouped.entries()];
-  }, [slots]);
-
-  const dayTimes = useMemo(
-    () => (slots ?? []).filter((s) => s.date === date).map((s) => ({ t: s.time, occupied: s.occupied })),
-    [slots, date],
-  );
-
-  const handleConfirm = async () => {
-    if (!service || !date || !time || name.trim().length < 2) {
-      toast.error("Preencha procedimento, dia, horário e seu nome.");
-      return;
-    }
-    if (phone.replace(/\D/g, "").length < 10) {
-      toast.error("Informe seu WhatsApp com DDD.");
-      return;
-    }
-    if (!proof) {
-      toast.error("Anexe o comprovante do Pix para reservar o horário.");
-      return;
-    }
-    if (proof.size > 5 * 1024 * 1024) {
-      toast.error("O comprovante deve ter no máximo 5 MB.");
-      return;
-    }
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"] as const;
-    const contentType = allowed.find((t) => t === proof.type);
-    if (!contentType) {
-      toast.error("Envie o comprovante em imagem (JPG, PNG) ou PDF.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const base64 = await fileToBase64(proof);
-      await createBooking({
-        data: {
-          serviceId: service.id,
-          date,
-          time,
-          clientName: name.trim(),
-          clientPhone: phone,
-          ...(note.trim() ? { notes: note.trim() } : {}),
-          proof: { base64, contentType, fileName: proof.name },
-        },
-      });
-      const parts = parseDateParts(date);
-      setDone(`${service.name} — ${parts.weekDay}, ${parts.full} às ${time}`);
-      toast.success("Horário reservado! Aguardando confirmação do pagamento.");
-      setDate(null);
-      setTime(null);
-      setNote("");
-      setProof(null);
-      await refetch();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível agendar.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const copyPix = async () => {
-    try {
-      await navigator.clipboard.writeText(PIX_KEY);
-      toast.success("Chave Pix copiada!");
-    } catch {
-      toast.error(`Copie manualmente: ${PIX_KEY}`);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Step 1 */}
-      <Card className="border border-border/60 bg-card/80 p-6 shadow-card">
-        <StepBadge n={1} label="Procedimento" />
-        <div className="flex flex-wrap gap-2">
-          {services.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => onSelectService(s.id)}
-              className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                selectedServiceId === s.id
-                  ? "border-primary bg-primary text-primary-foreground shadow-gold"
-                  : "border-border bg-background text-foreground hover:border-primary/50"
-              }`}
-            >
-              {s.name}
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      {/* Step 2 */}
-      <Card className="border border-border/60 bg-card/80 p-6 shadow-card">
-        <StepBadge n={2} label="Dia disponível" />
-        <p className="-mt-2 mb-4 text-xs text-muted-foreground">
-          Somente dias e horários liberados pela Sabrine — a semana seguinte abre com uma semana de
-          antecedência.
-        </p>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando dias disponíveis...</p>
-        ) : weeks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Nenhum horário liberado no momento. Volte em breve.
-          </p>
-        ) : (
-          <div className="space-y-5">
-            {weeks.map(([label, days]) => (
-              <div key={label}>
-                <p className="mb-2 flex items-center gap-2 text-xs font-medium tracking-wide text-primary">
-                  <CalendarDays className="h-3.5 w-3.5" /> {label}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {days.map((d) => {
-                    const p = parseDateParts(d.date);
-                    const active = date === d.date;
-                    return (
-                      <button
-                        key={d.date}
-                        type="button"
-                        onClick={() => {
-                          setDate(d.date);
-                          setTime(null);
-                        }}
-                        className={`flex w-16 flex-col items-center rounded-xl border py-2 text-xs transition-colors ${
-                          d.count === 0 && !active
-                            ? "border-border bg-muted text-muted-foreground line-through"
-                            : active
-                            ? "border-primary bg-primary text-primary-foreground shadow-gold"
-                            : "border-border bg-background text-foreground hover:border-primary/50"
-                        }`}
-                      >
-                        <span>{p.weekDay}</span>
-                        <span className="text-lg font-semibold">{p.day}</span>
-                        <span>{p.month}</span>
-                        <span className="mt-1 opacity-70">
-                          {d.count === 0 ? "Esgotado" : `${d.count} ${d.count === 1 ? "vaga" : "vagas"}`}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Step 3 */}
-      <Card className="border border-border/60 bg-card/80 p-6 shadow-card">
-        <StepBadge n={3} label="Horário" />
-        {!date ? (
-          <p className="text-sm text-muted-foreground">Escolha um dia para ver os horários livres.</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {dayTimes.every((x) => x.occupied) && (
-              <p className="w-full rounded-lg bg-muted px-3 py-2 text-sm font-medium text-muted-foreground">
-                Agenda cheia neste dia — todos os horários já foram reservados.
-              </p>
-            )}
-            {dayTimes.map(({ t, occupied }) => (
-              <button
-                key={t}
-                type="button"
-                disabled={occupied}
-                onClick={() => setTime(t)}
-                title={occupied ? "Horário já reservado" : undefined}
-                className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                  occupied
-                    ? "cursor-not-allowed border-border bg-muted text-muted-foreground line-through opacity-60"
-                    : time === t
-                      ? "border-primary bg-primary text-primary-foreground shadow-gold"
-                      : "border-border bg-background text-foreground hover:border-primary/50"
-                }`}
-              >
-                {t}
-                {occupied && <span className="ml-1 text-[10px] no-underline">ocupado</span>}
-              </button>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Step 4 */}
-      <Card className="border border-border/60 bg-card/80 p-6 shadow-card">
-        <StepBadge n={4} label="Seus dados" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-sm text-muted-foreground">Seu nome</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm text-muted-foreground">WhatsApp</label>
-            <Input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(37) 99999-9999"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="mb-1 block text-sm text-muted-foreground">Observação (opcional)</label>
-            <Input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Alguma preferência ou informação importante?"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 rounded-xl bg-secondary/40 p-4 text-sm">
-          <p className="mb-3 font-semibold text-foreground">Resumo do agendamento</p>
-          <dl className="space-y-1 text-muted-foreground">
-            <div className="flex justify-between">
-              <dt>Procedimento:</dt>
-              <dd className="text-foreground">{service?.name ?? "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt>Valor:</dt>
-              <dd className="text-foreground">{service ? priceRange(service) : "—"}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt>Dia:</dt>
-              <dd className="text-foreground">
-                {date ? `${parseDateParts(date).weekDay}, ${parseDateParts(date).full}` : "—"}
-              </dd>
-            </div>
-            <div className="flex justify-between">
-              <dt>Horário:</dt>
-              <dd className="text-foreground">{time ?? "—"}</dd>
-            </div>
-          </dl>
-        </div>
-
-      </Card>
-
-      {/* Step 5 - Pix */}
-      <Card className="border-2 border-primary/50 bg-card/80 p-6 shadow-gold">
-        <StepBadge n={5} label="Pagamento antecipado via Pix" />
-        <p className="-mt-2 mb-4 text-sm text-muted-foreground">
-          Pague o <strong className="text-foreground">valor total do procedimento</strong> para garantir sua vaga.
-          Horário sem pagamento não é reservado.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl bg-secondary/40 p-4">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Valor a pagar</p>
-            <p className="mt-1 font-serif text-3xl font-semibold text-primary">
-              {service?.price_min != null ? formatCurrencyCents(service.price_min) : "—"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">{service?.name ?? "Escolha um procedimento"}</p>
-          </div>
-          <div className="rounded-xl border border-primary/40 bg-background p-4">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Chave Pix (celular)</p>
-            <p className="mt-1 font-mono text-2xl font-bold tracking-wide text-foreground">{PIX_KEY}</p>
-            <p className="text-xs text-muted-foreground">{PIX_DISPLAY} · Recebedora: <strong className="text-foreground">Sabrine</strong></p>
-            <Button type="button" variant="outline" size="sm" className="mt-3 rounded-full" onClick={copyPix}>
-              <Copy className="mr-2 h-4 w-4" /> Copiar chave Pix
-            </Button>
-          </div>
-        </div>
-        <div className="mt-4">
-          <label className="mb-1 block text-sm text-muted-foreground">Comprovante do Pix (imagem ou PDF)</label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-primary/50 bg-background px-4 py-3 text-sm text-foreground hover:bg-primary/5">
-            <Upload className="h-4 w-4 text-primary" />
-            <span className="truncate">{proof ? proof.name : "Toque para anexar o comprovante"}</span>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              className="hidden"
-              onChange={(e) => setProof(e.target.files?.[0] ?? null)}
-            />
-          </label>
-        </div>
-
-        <Button className="mt-6 w-full rounded-full" size="lg" disabled={saving} onClick={handleConfirm}>
-          <Check className="mr-2 h-4 w-4" />
-          {saving ? "Enviando..." : "Já paguei - confirmar agendamento"}
-        </Button>
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          Seu horário fica reservado com status <strong>aguardando confirmação do pagamento</strong> até a
-          Sabrine conferir o comprovante.
-        </p>
-        {done && (
-          <div className="mt-4 rounded-xl border border-primary/50 bg-primary/10 p-4 text-sm text-foreground">
-            <p className="font-semibold">Horário reservado: {done}</p>
-            <p className="mt-1 text-muted-foreground">Status: aguardando confirmação do pagamento.</p>
-          </div>
-        )}
-        <p className="mt-2 flex items-start gap-2 text-center text-xs text-muted-foreground">
-          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-          Cancelamento ou reagendamento apenas até 24 horas antes do horário marcado — a vaga é
-          liberada na hora para outra cliente.
-        </p>
-      </Card>
-    </div>
-  );
-}
-
 function BookingAssistant() {
   const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
     {
       role: "assistant",
       content:
-        "Olá! ✨ Sou a assistente da Sabrine Beauty. Me conte como são suas sobrancelhas ou lábios e o que você deseja — eu indico o procedimento ideal e mostro os dias e horários livres.",
+        "Olá! ✨ Sou a assistente da Sabrine Beauty. Me conte como são suas sobrancelhas ou lábios e o que você deseja — eu indico o procedimento ideal e tiro suas dúvidas.",
     },
   ]);
   const [input, setInput] = useState("");
