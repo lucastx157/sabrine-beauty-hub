@@ -92,6 +92,7 @@ export type Database = {
       bookings: {
         Row: {
           amount_cents: number | null
+          attendee_name: string | null
           booking_date: string
           client_email: string | null
           client_name: string
@@ -109,6 +110,7 @@ export type Database = {
         }
         Insert: {
           amount_cents?: number | null
+          attendee_name?: string | null
           booking_date: string
           client_email?: string | null
           client_name: string
@@ -126,6 +128,7 @@ export type Database = {
         }
         Update: {
           amount_cents?: number | null
+          attendee_name?: string | null
           booking_date?: string
           client_email?: string | null
           client_name?: string
@@ -163,6 +166,7 @@ export type Database = {
           active: boolean | null
           category: string | null
           created_at: string | null
+          deposit_cents: number | null
           description: string | null
           duration_max: number | null
           duration_min: number | null
@@ -170,6 +174,7 @@ export type Database = {
           name: string
           price_max: number | null
           price_min: number | null
+          price_note: string | null
           slug: string
           sort_order: number | null
           updated_at: string | null
@@ -178,6 +183,7 @@ export type Database = {
           active?: boolean | null
           category?: string | null
           created_at?: string | null
+          deposit_cents?: number | null
           description?: string | null
           duration_max?: number | null
           duration_min?: number | null
@@ -185,6 +191,7 @@ export type Database = {
           name: string
           price_max?: number | null
           price_min?: number | null
+          price_note?: string | null
           slug: string
           sort_order?: number | null
           updated_at?: string | null
@@ -193,6 +200,7 @@ export type Database = {
           active?: boolean | null
           category?: string | null
           created_at?: string | null
+          deposit_cents?: number | null
           description?: string | null
           duration_max?: number | null
           duration_min?: number | null
@@ -200,6 +208,7 @@ export type Database = {
           name?: string
           price_max?: number | null
           price_min?: number | null
+          price_note?: string | null
           slug?: string
           sort_order?: number | null
           updated_at?: string | null

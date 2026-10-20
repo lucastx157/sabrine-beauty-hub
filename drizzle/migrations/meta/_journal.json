@@ -29,6 +29,13 @@
       "when": 1792240054436,
       "tag": "0003_bookings_status_pending_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792526349798,
+      "tag": "0004_booking_requests_and_deposits",
+      "breakpoints": true
     }
   ]
 }
