@@ -3,7 +3,6 @@ import { z } from "zod";
 import {
   listServices,
   getAvailableSlots,
-  createBooking,
   getCancellationPolicy,
 } from "./booking.functions";
 import { formatBrazilDate, formatDisplayDate, formatPhone, nowInBrazil } from "./dates";
@@ -53,6 +52,18 @@ const tools = [
       name: "get_services",
       description: "Retorna a lista de serviços oferecidos, preços e duração.",
       parameters: { type: "object" as const, properties: {}, required: [] },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "get_available_slots",
+      description: "Lista os horários LIVRES (datas YYYY-MM-DD). Apenas para informar; a cliente marca na seção de agendamento do site.",
+      parameters: {
+        type: "object" as const,
+        properties: { date_from: { type: "string" }, date_to: { type: "string" } },
+        required: [],
+      },
     },
   },
   {
@@ -125,7 +136,10 @@ async function executeTool(call: {
             services.map((s) => ({
               id: s.id,
               name: s.name,
-              price_min: s.price_min,
+              price: s.price_min,
+              price_before_discount: s.price_max,
+              pix_now: s.deposit_cents ?? s.price_min,
+              notes: s.price_note,
               duration_min: s.duration_min,
               description: s.description,
             })),
@@ -160,39 +174,6 @@ async function executeTool(call: {
           ),
         };
       }
-      case "create_booking": {
-        if (
-          typeof args["service_id"] !== "string" ||
-          typeof args["date"] !== "string" ||
-          typeof args["time"] !== "string" ||
-          typeof args["client_name"] !== "string"
-        ) {
-          return {
-            tool_call_id: call.id,
-            role: "tool",
-            content: JSON.stringify({ error: "Informações incompletas para agendar." }),
-          };
-        }
-        const booking = await createBooking({
-          data: {
-            serviceId: args["service_id"],
-            date: args["date"],
-            time: args["time"],
-            clientName: args["client_name"],
-            clientPhone: typeof args["client_phone"] === "string" ? args["client_phone"] : undefined,
-          },
-        });
-        return {
-          tool_call_id: call.id,
-          role: "tool",
-          content: JSON.stringify({
-            success: true,
-            booking_id: (booking as { id: string }).id,
-            date: args["date"],
-            time: args["time"],
-          }),
-        };
-      }
       case "get_cancellation_policy": {
         const policy = await getCancellationPolicy({ data: undefined });
         return { tool_call_id: call.id, role: "tool", content: policy };
@@ -218,10 +199,12 @@ export const chatWithAssistant = createServerFn({ method: "POST" })
 
 Regras importantes:
 - Use português brasileiro, tom acolhedor, elegante e direto.
-- Você apenas tira dúvidas sobre os procedimentos e indica o ideal. Use get_services para serviços e preços; nunca invente.
-- Você NÃO mostra horários, NÃO marca e NÃO confirma agendamentos.
-- Agendamentos são feitos somente pela agenda semanal online: https://claude.ai/artifact/9cetsC7qcS4TCiR9EXTsqz — lá a cliente vê os horários disponíveis, escolhe o procedimento, faz o pagamento antecipado via Pix e envia o comprovante pelo WhatsApp. A Sabrine confirma em até 2 horas. Sempre indique esse link quando a cliente quiser agendar.
-- Política: consulte via get_cancellation_policy.`;
+- Tire dúvidas e indique o procedimento ideal. Use get_services para preços (valores em centavos); nunca invente.
+- Pode informar horários livres com get_available_slots, mas você NÃO marca nem confirma agendamentos.
+- Para agendar, oriente a cliente a usar a seção "Agendamento" deste site (role a página até "Agende seu horário" ou toque em "Agendar agora"): escolhe o procedimento, o dia e o horário, informa nome e WhatsApp, paga o valor no Pix (chave 37998598753, Sabrine) e toca em "Já paguei, enviar comprovante", que abre o WhatsApp da Sabrine.
+- O horário só está marcado depois do ok da Sabrine (até 8 horas).
+- Micropigmentação Labial (R$ 750) e de Sobrancelhas (de R$ 750 por R$ 679): paga-se sinal de R$ 100 no Pix e o restante no dia (Pix ou cartão). Retoque em 30 dias: labial R$ 150, sobrancelhas R$ 100. Labial ganha Hydra Gloss de brinde.
+- Regras: vaga só com Pix + comprovante; remarcar com 24h de aviso (o valor vale para o novo horário); falta ou aviso com menos de 24h não tem devolução; tolerância de 15 minutos; se duas pessoas pagarem o mesmo horário, fica quem mandou o comprovante primeiro.`;
 
     const modelMessages: ChatMessage[] = [
       { role: "system", content: system },

@@ -196,94 +196,67 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
     return slots;
   });
 
-const createBookingSchema = z.object({
+export const requestBookingSchema = z.object({
   serviceId: z.string().uuid(),
   date: z.string().date(),
   time: z.string().regex(/^\d{2}:\d{2}$/),
-  clientName: z.string().min(2).max(100),
-  clientPhone: z.string().min(10).max(20).optional(),
-  notes: z.string().max(500).optional(),
-  // Comprovante Pix (obrigatório quando vindo do site; a IA reserva sem comprovante)
-  proof: z
-    .object({
-      base64: z.string().max(7_000_000),
-      contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]),
-      fileName: z.string().max(200),
-    })
-    .optional(),
+  clientName: z.string().trim().min(2).max(100),
+  clientPhone: z
+    .string()
+    .transform((v) => v.replace(/\D/g, ""))
+    .pipe(z.string().regex(/^\d{10,11}$/, "WhatsApp com DDD inválido")),
+  attendeeName: z.string().trim().min(2).max(100).optional(),
 });
 
-export const createBooking = createServerFn({ method: "POST" })
-  .inputValidator((data) => createBookingSchema.parse(data))
+/** Valor a pagar agora no Pix: sinal quando existir, senão o preço do procedimento. */
+export function amountDueNowCents(service: { price_min: number | null; deposit_cents: number | null }) {
+  return service.deposit_cents ?? service.price_min ?? 0;
+}
+
+// Pedido de agendamento: NÃO bloqueia o horário. A Sabrine bloqueia no painel
+// depois de conferir o comprovante enviado pelo WhatsApp.
+export const requestBooking = createServerFn({ method: "POST" })
+  .inputValidator((data) => requestBookingSchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
     const [hour, minute] = data.time.split(":").map((v) => parseInt(v, 10));
 
     const { data: service, error: serviceError } = await supabaseAdmin
       .from("services")
-      .select("name, duration_min, duration_max, price_min")
+      .select("name, duration_min, price_min, deposit_cents")
       .eq("id", data.serviceId)
+      .eq("active", true)
       .single();
-    if (serviceError || !service) throw new Error("Serviço não encontrado");
+    if (serviceError || !service) throw new Error("Procedimento não encontrado");
 
-    const duration = service.duration_min ?? 30;
-    const endMinutes = hour! * 60 + minute! + duration;
-    const endTime = `${Math.floor(endMinutes / 60)
-      .toString()
-      .padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
-
-    // Validate slot is still free
     const slots = await getAvailableSlots({
       data: { serviceId: data.serviceId, from: data.date, to: data.date },
     });
-    const isAvailable = slots.some((s) => s.time === data.time && !s.occupied);
-    if (!isAvailable) throw new Error("Esse horário não está mais disponível. Escolha outro, por favor.");
-
-    let proofPath: string | null = null;
-    if (data.proof) {
-      const ext = data.proof.fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-      proofPath = `${data.date}/${crypto.randomUUID()}.${ext}`;
-      const bytes = Uint8Array.from(atob(data.proof.base64), (c) => c.charCodeAt(0));
-      const { error: upErr } = await supabaseAdmin.storage
-        .from("payment-proofs")
-        .upload(proofPath, bytes, { contentType: data.proof.contentType });
-      if (upErr) throw new Error("Não foi possível enviar o comprovante. Tente novamente.");
+    if (!slots.some((s) => s.time === data.time && !s.occupied)) {
+      throw new Error("Esse horário não está mais livre. Escolha outro, por favor.");
     }
+
+    const endMinutes = hour! * 60 + minute! + (service.duration_min ?? 30);
+    const amount = amountDueNowCents(service);
 
     const { data: booking, error } = await supabaseAdmin
       .from("bookings")
       .insert({
-        amount_cents: service.price_min ?? null,
-        payment_proof_path: proofPath,
-        notes: data.notes?.trim() || null,
         service_id: data.serviceId,
-        client_name: data.clientName.trim(),
-        client_phone: data.clientPhone?.replace(/\D/g, "") ?? null,
+        client_name: data.clientName,
+        client_phone: data.clientPhone,
+        attendee_name: data.attendeeName ?? null,
         booking_date: data.date,
         start_time: data.time,
-        end_time: endTime,
-        status: "pending_payment",
+        end_time: minutesToTimeStr(Math.min(endMinutes, 23 * 60 + 59)),
+        amount_cents: amount,
+        status: "requested",
       })
-      .select("id, booking_date, start_time, services(name)")
+      .select("id")
       .single();
     if (error) throw new Error(error.message);
 
-    const notificationNumber = await getNotificationNumber();
-    if (notificationNumber) {
-      await sendWhatsAppNotification(
-        notificationNumber,
-        bookingNotificationMessage({
-          type: "created",
-          clientName: data.clientName.trim(),
-          serviceName: service.name,
-          date: data.date,
-          time: data.time,
-        }),
-        booking.id,
-      );
-    }
-
-    return booking;
+    return { id: booking.id, amountCents: amount, serviceName: service.name };
   });
 
 const myBookingsSchema = z.object({

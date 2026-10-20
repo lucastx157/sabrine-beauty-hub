@@ -10,15 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  getAvailability,
-  saveAvailability,
-  deleteAvailability,
   getAdminBookings,
+  getDateSlots,
+  toggleSlotBlocked,
+  addDateSlot,
+  setDayBlocked,
+  deleteDateSlot,
   getAppConfig,
   updateAppConfig,
   updateBookingStatus,
 } from "@/lib/admin.functions";
-import { formatDisplayDate } from "@/lib/dates";
+import { formatDisplayDate, formatCurrencyCents, formatPhone } from "@/lib/dates";
+import { addDays, format, startOfWeek } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -108,23 +112,19 @@ function AdminLogin({ onLogin }: { onLogin: (session: Session) => void }) {
 }
 
 function AdminDashboard() {
-  const [availability, setAvailability] = useState<Awaited<ReturnType<typeof getAvailability>>>([]);
   const [bookings, setBookings] = useState<Awaited<ReturnType<typeof getAdminBookings>>>([]);
   const [config, setConfig] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    setLoading(true);
     try {
-      const [a, b, c] = await Promise.all([
-        getAvailability({ data: undefined }),
+      const [b, c] = await Promise.all([
         getAdminBookings({ data: undefined }),
         getAppConfig({ data: undefined }),
       ]);
-      setAvailability(a);
       setBookings(b);
       setConfig(c);
-    } catch (err) {
+    } catch {
       toast.error("Erro ao carregar painel. Verifique se você tem permissão de admin.");
     } finally {
       setLoading(false);
@@ -132,42 +132,33 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   if (loading) return <div className="p-10 text-center">Carregando painel…</div>;
+  const newCount = bookings.filter((b) => b.status === "requested").length;
 
   return (
-    <div className="min-h-screen bg-background px-6 py-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="font-serif text-3xl font-semibold text-foreground">Painel Sabrine Beauty</h1>
-            <p className="text-sm text-muted-foreground">Gerencie disponibilidade, configurações e agendamentos.</p>
-          </div>
-          <Button variant="outline" onClick={() => supabase.auth.signOut()} className="rounded-full">
+    <div className="min-h-screen bg-background px-3 py-6 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h1 className="font-serif text-2xl font-semibold text-foreground">Painel Sabrine</h1>
+          <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()} className="rounded-full">
             Sair
           </Button>
         </div>
 
-        <Tabs defaultValue="availability" className="space-y-6">
-          <TabsList className="rounded-full bg-secondary p-1">
-            <TabsTrigger value="availability" className="rounded-full px-4">
-              Disponibilidade
+        <Tabs defaultValue="week" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3 rounded-full bg-secondary p-1">
+            <TabsTrigger value="week" className="rounded-full">Semana</TabsTrigger>
+            <TabsTrigger value="bookings" className="rounded-full">
+              Pedidos{newCount > 0 ? ` (${newCount})` : ""}
             </TabsTrigger>
-            <TabsTrigger value="bookings" className="rounded-full px-4">
-              Agendamentos
-            </TabsTrigger>
-            <TabsTrigger value="config" className="rounded-full px-4">
-              Configurações
-            </TabsTrigger>
+            <TabsTrigger value="config" className="rounded-full">Ajustes</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="availability">
-            <AvailabilityPanel
-              availability={availability}
-              onChange={load}
-            />
+          <TabsContent value="week">
+            <WeekPanel />
           </TabsContent>
           <TabsContent value="bookings">
             <BookingsPanel bookings={bookings} onChanged={() => void getAdminBookings({ data: undefined }).then(setBookings)} />
@@ -181,151 +172,139 @@ function AdminDashboard() {
   );
 }
 
-function AvailabilityPanel({
-  availability,
-  onChange,
-}: {
-  availability: Awaited<ReturnType<typeof getAvailability>>;
-  onChange: () => void;
-}) {
-  const [editing, setEditing] = useState<Partial<Awaited<ReturnType<typeof getAvailability>>[number] & { isNew?: boolean }> | null>(null);
+type DateSlot = Awaited<ReturnType<typeof getDateSlots>>[number];
 
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
+function WeekPanel() {
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [slots, setSlots] = useState<DateSlot[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [newTimes, setNewTimes] = useState<Record<string, string>>({});
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const key = (d: Date) => format(d, "yyyy-MM-dd");
+
+  const load = async () => {
     try {
-      await saveAvailability({
-        data: {
-          id: editing.id,
-          dayOfWeek: editing.day_of_week ?? 0,
-          startTime: editing.start_time ?? "09:00",
-          endTime: editing.end_time ?? "18:00",
-          slotIntervalMinutes: editing.slot_interval_minutes ?? 30,
-        },
-      });
-      toast.success("Disponibilidade salva.");
-      setEditing(null);
-      onChange();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
+      setSlots(await getDateSlots({ data: { from: key(days[0]!), to: key(days[6]!) } }));
+    } catch {
+      toast.error("Erro ao carregar horários.");
     }
   };
+  useEffect(() => {
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weekStart]);
 
-  const remove = async (id: string) => {
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
     try {
-      await deleteAvailability({ data: { id } });
-      toast.success("Disponibilidade removida.");
-      onChange();
-    } catch (err) {
-      toast.error("Erro ao remover.");
+      await fn();
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <Card className="p-6 shadow-card">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Horários de atendimento</h2>
-        <Button
-          onClick={() =>
-            setEditing({
-              isNew: true,
-              day_of_week: 1,
-              start_time: "09:00",
-              end_time: "18:00",
-              slot_interval_minutes: 30,
-            })
-          }
-          size="sm"
-          className="rounded-full"
-        >
-          + Adicionar
-        </Button>
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="outline" size="sm" onClick={() => setWeekStart(addDays(weekStart, -7))}>‹ Anterior</Button>
+        <p className="text-sm font-medium text-foreground">
+          {format(days[0]!, "dd/MM")} a {format(days[6]!, "dd/MM")}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => setWeekStart(addDays(weekStart, 7))}>Próxima ›</Button>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Toque no horário para alternar: <span className="font-semibold text-success">verde = livre</span>,{" "}
+        <span className="font-semibold text-destructive">vermelho = bloqueado</span>.
+      </p>
 
-      <div className="space-y-3">
-        {availability
-          .filter((a) => a.active)
-          .sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time))
-          .map((a) => (
-            <div
-              key={a.id}
-              className="flex items-center justify-between rounded-xl border border-border bg-background p-4"
-            >
-              <div>
-                <p className="font-medium text-foreground">{weekDays[a.day_of_week]}</p>
-                <p className="text-sm text-muted-foreground">
-                  {a.start_time} às {a.end_time} · intervalo de {a.slot_interval_minutes} min
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-full" onClick={() => setEditing(a)}>
-                  Editar
+      {days.map((d) => {
+        const k = key(d);
+        const daySlots = slots.filter((s) => s.available_date === k);
+        const allBlocked = daySlots.length > 0 && daySlots.every((s) => s.is_blocked);
+        return (
+          <Card key={k} className="p-4 shadow-card">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="font-semibold capitalize text-foreground">
+                {format(d, "EEEE dd/MM", { locale: ptBR })}
+              </p>
+              {daySlots.length > 0 && (
+                <Button
+                  size="sm"
+                  variant={allBlocked ? "default" : "outline"}
+                  disabled={busy}
+                  onClick={() => run(() => setDayBlocked({ data: { date: k, blocked: !allBlocked } }))}
+                >
+                  {allBlocked ? "Liberar dia" : "Fechar dia"}
                 </Button>
-                <Button variant="destructive" size="sm" className="rounded-full" onClick={() => remove(a.id)}>
-                  Excluir
-                </Button>
-              </div>
+              )}
             </div>
-          ))}
-      </div>
-
-      {editing && (
-        <form onSubmit={save} className="mt-6 space-y-4 rounded-xl border border-border bg-secondary/30 p-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Dia da semana</Label>
-              <select
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                value={editing.day_of_week}
-                onChange={(e) => setEditing({ ...editing, day_of_week: parseInt(e.target.value) })}
-              >
-                {weekDays.map((d, i) => (
-                  <option key={i} value={i}>
-                    {d}
-                  </option>
+            {daySlots.length === 0 ? (
+              <p className="mb-3 text-sm text-muted-foreground">Sem horários neste dia.</p>
+            ) : (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {daySlots.map((s) => (
+                  <div key={s.id} className="flex items-center">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => run(() => toggleSlotBlocked({ data: { id: s.id, blocked: !s.is_blocked } }))}
+                      className={`rounded-l-full px-4 py-2 text-sm font-semibold ${
+                        s.is_blocked
+                          ? "bg-destructive/15 text-destructive line-through"
+                          : "bg-success/15 text-success"
+                      }`}
+                    >
+                      {s.start_time}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-label={`Apagar ${s.start_time}`}
+                      onClick={() => {
+                        if (confirm(`Apagar o horário ${s.start_time}?`)) void run(() => deleteDateSlot({ data: { id: s.id } }));
+                      }}
+                      className="rounded-r-full bg-muted px-2.5 py-2 text-sm text-muted-foreground"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
-              </select>
-            </div>
-            <div>
-              <Label>Intervalo (min)</Label>
-              <Input
-                type="number"
-                value={editing.slot_interval_minutes}
-                onChange={(e) => setEditing({ ...editing, slot_interval_minutes: parseInt(e.target.value) })}
-              />
-            </div>
-            <div>
-              <Label>Início</Label>
+              </div>
+            )}
+            <div className="flex gap-2">
               <Input
                 type="time"
-                value={editing.start_time}
-                onChange={(e) => setEditing({ ...editing, start_time: e.target.value })}
+                step={1800}
+                value={newTimes[k] ?? ""}
+                onChange={(e) => setNewTimes({ ...newTimes, [k]: e.target.value })}
+                className="w-32"
+                aria-label={`Novo horário ${k}`}
               />
+              <Button
+                size="sm"
+                disabled={busy || !newTimes[k]}
+                onClick={() =>
+                  run(async () => {
+                    await addDateSlot({ data: { date: k, time: newTimes[k]!.slice(0, 5) } });
+                    setNewTimes({ ...newTimes, [k]: "" });
+                  })
+                }
+              >
+                + Adicionar horário
+              </Button>
             </div>
-            <div>
-              <Label>Término</Label>
-              <Input
-                type="time"
-                value={editing.end_time}
-                onChange={(e) => setEditing({ ...editing, end_time: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={() => setEditing(null)} className="rounded-full">
-              Cancelar
-            </Button>
-            <Button type="submit" className="rounded-full">
-              Salvar
-            </Button>
-          </div>
-        </form>
-      )}
-    </Card>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
 const statusLabels: Record<string, string> = {
+  requested: "Novo pedido – conferir comprovante",
   pending_payment: "Aguardando confirmação do pagamento",
   confirmed: "Confirmado",
   cancelled: "Cancelado",
@@ -341,6 +320,7 @@ function BookingsPanel({
   onChanged: () => void;
 }) {
   const setStatus = async (id: string, status: "confirmed" | "cancelled") => {
+    if (status === "cancelled" && !confirm("Cancelar este pedido?")) return;
     try {
       await updateBookingStatus({ data: { id, status } });
       toast.success(status === "confirmed" ? "Pagamento confirmado" : "Agendamento cancelado");
@@ -351,7 +331,10 @@ function BookingsPanel({
   };
   return (
     <Card className="p-6 shadow-card">
-      <h2 className="mb-4 text-lg font-semibold text-foreground">Próximos agendamentos</h2>
+      <h2 className="mb-1 text-lg font-semibold text-foreground">Pedidos recebidos</h2>
+      <p className="mb-4 text-xs text-muted-foreground">
+        Pedido novo não bloqueia o horário. Depois de ver o comprovante, toque em Confirmar (isso já ocupa o horário).
+      </p>
       {bookings.length === 0 ? (
         <p className="text-muted-foreground">Nenhum agendamento encontrado.</p>
       ) : (
@@ -366,7 +349,13 @@ function BookingsPanel({
                   <p className="text-sm text-muted-foreground">
                     {formatDisplayDate(b.booking_date)} às {b.start_time}
                   </p>
-                  {b.client_phone && <p className="text-xs text-muted-foreground">{b.client_phone}</p>}
+                  {b.attendee_name && <p className="text-xs text-muted-foreground">Quem vai fazer: {b.attendee_name}</p>}
+                  {b.client_phone && (
+                    <a className="text-xs text-primary underline" href={`https://wa.me/55${b.client_phone}`} target="_blank" rel="noreferrer">
+                      WhatsApp {formatPhone(b.client_phone)}
+                    </a>
+                  )}
+                  {b.amount_cents != null && <p className="text-xs text-muted-foreground">Pix: {formatCurrencyCents(b.amount_cents)}</p>}
                   {b.notes && <p className="text-xs text-muted-foreground">Obs.: {b.notes}</p>}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {b.proofUrl && (
@@ -374,9 +363,9 @@ function BookingsPanel({
                         <a href={b.proofUrl} target="_blank" rel="noreferrer">Ver comprovante Pix</a>
                       </Button>
                     )}
-                    {b.status === "pending_payment" && (
+                    {(b.status === "pending_payment" || b.status === "requested") && (
                       <>
-                        <Button size="sm" onClick={() => setStatus(b.id, "confirmed")}>Confirmar pagamento</Button>
+                        <Button size="sm" onClick={() => setStatus(b.id, "confirmed")}>Confirmar</Button>
                         <Button size="sm" variant="outline" onClick={() => setStatus(b.id, "cancelled")}>Cancelar</Button>
                       </>
                     )}

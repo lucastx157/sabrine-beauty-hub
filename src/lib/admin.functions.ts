@@ -118,7 +118,7 @@ export const getAdminBookings = createServerFn({ method: "GET" })
 
 const updateBookingStatusSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(["confirmed", "cancelled", "rescheduled", "no_show", "pending_payment"]),
+  status: z.enum(["requested", "confirmed", "cancelled", "rescheduled", "no_show", "pending_payment"]),
 });
 
 export const updateBookingStatus = createServerFn({ method: "POST" })
@@ -201,5 +201,94 @@ export const createAdmin = createServerFn({ method: "POST" })
     });
     if (roleError) throw new Error(roleError.message);
 
+    return { ok: true };
+  });
+
+// ---- Horários por data (painel simples para celular) ----
+
+const rangeSchema = z.object({ from: z.string().date(), to: z.string().date() });
+
+export const getDateSlots = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) => rangeSchema.parse(data))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { data: rows, error } = await supabaseAdmin
+      .from("availability_overrides")
+      .select("id, available_date, start_time, is_blocked")
+      .eq("active", true)
+      .gte("available_date", data.from)
+      .lte("available_date", data.to)
+      .order("available_date")
+      .order("start_time");
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r) => ({ ...r, start_time: r.start_time.slice(0, 5) }));
+  });
+
+export const toggleSlotBlocked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) => z.object({ id: z.string().uuid(), blocked: z.boolean() }).parse(data))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("availability_overrides")
+      .update({ is_blocked: data.blocked })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const addDateSlot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) =>
+    z.object({ date: z.string().date(), time: z.string().regex(/^\d{2}:\d{2}$/) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { data: existing } = await supabaseAdmin
+      .from("availability_overrides")
+      .select("id")
+      .eq("available_date", data.date)
+      .eq("start_time", data.time)
+      .eq("active", true);
+    if ((existing ?? []).length > 0) {
+      const { error } = await supabaseAdmin
+        .from("availability_overrides")
+        .update({ is_blocked: false })
+        .eq("id", existing![0]!.id);
+      if (error) throw new Error(error.message);
+      return { ok: true };
+    }
+    const { error } = await supabaseAdmin
+      .from("availability_overrides")
+      .insert({ available_date: data.date, start_time: data.time });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setDayBlocked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) => z.object({ date: z.string().date(), blocked: z.boolean() }).parse(data))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("availability_overrides")
+      .update({ is_blocked: data.blocked })
+      .eq("available_date", data.date)
+      .eq("active", true);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteDateSlot = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("availability_overrides")
+      .update({ active: false })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
