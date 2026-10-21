@@ -25,6 +25,7 @@ import { listServices } from "@/lib/booking.functions";
 import { chatWithAssistant } from "@/lib/ai.functions";
 import { formatCurrencyCents } from "@/lib/dates";
 import { toast } from "sonner";
+import { BookingFlow } from "@/components/BookingFlow";
 
 const servicesQueryOptions = queryOptions({
   queryKey: ["services"],
@@ -44,7 +45,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "História, prêmios, galeria e serviços da Sabrine Beauty. Agende pela agenda semanal online.",
+          "História, prêmios, galeria e serviços da Sabrine Beauty. Agende online com pagamento via Pix.",
       },
       { property: "og:type", content: "website" },
       {
@@ -63,7 +64,6 @@ export const Route = createFileRoute("/")({
 });
 
 const WHATSAPP_NUMBER = "5537998598753";
-const AGENDA_URL = "https://claude.ai/artifact/9cetsC7qcS4TCiR9EXTsqz";
 const WHATSAPP_DISPLAY = "(37) 99859-8753";
 const INSTAGRAM_URL = "https://instagram.com/sabrine_sobrancelhas";
 
@@ -73,6 +73,9 @@ const shortMonths = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "se
 type Service = Awaited<ReturnType<typeof listServices>>[number];
 
 function priceRange(service: Service) {
+  if (service.price_max && service.price_max > (service.price_min ?? 0) && service.price_note?.startsWith("De ")) {
+    return `de ${formatCurrencyCents(service.price_max)} por ${formatCurrencyCents(service.price_min ?? 0)}`;
+  }
   const min = formatCurrencyCents(service.price_min ?? 0);
   if (service.price_max && service.price_max !== service.price_min) {
     return `${min} - ${formatCurrencyCents(service.price_max)}`;
@@ -160,6 +163,18 @@ const specialServices = [
 
 function HomePage() {
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+
+  // Sempre abrir no topo (exceto links com #).
+  useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    if (!window.location.hash) window.scrollTo(0, 0);
+  }, []);
+
+  const goToBooking = (serviceId?: string) => {
+    if (serviceId) setSelectedServiceId(serviceId);
+    document.getElementById("agendamento")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -214,8 +229,8 @@ function HomePage() {
               exclusiva Sabrine para sobrancelhas e lábios que harmonizam com o seu rosto.
             </p>
             <div className="mt-10 flex flex-wrap gap-4">
-              <Button asChild size="lg" className="rounded-full px-8 shadow-gold">
-                <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">Agendar agora</a>
+              <Button size="lg" className="rounded-full px-8 shadow-gold" onClick={() => goToBooking()}>
+                Agendar agora
               </Button>
               <Button asChild variant="outline" size="lg" className="rounded-full px-8">
                 <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
@@ -320,11 +335,12 @@ function HomePage() {
                     <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
                   </p>
                   <p className="mt-4 flex-1 text-sm text-muted-foreground">{service.description}</p>
-                  <Button asChild variant="outline" className="mt-6 rounded-full group/btn">
-                    <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">
-                      Escolher horário
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                    </a>
+                  {service.price_note && (
+                    <p className="mt-3 text-xs text-muted-foreground">{service.price_note}</p>
+                  )}
+                  <Button variant="outline" className="mt-6 rounded-full group/btn" onClick={() => goToBooking(service.id)}>
+                    Escolher horário
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                   </Button>
                 </div>
               </Card>
@@ -345,42 +361,31 @@ function HomePage() {
                 </p>
               </div>
               <Button asChild className="mt-6 rounded-full">
-                <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">Descobrir meu procedimento</a>
+                <a href="#assistente">Descobrir meu procedimento</a>
               </Button>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Weekly agenda */}
-      <section id="agendamento" className="relative overflow-hidden py-32 bg-secondary/30">
+      {/* Booking */}
+      <section id="agendamento" className="relative scroll-mt-20 overflow-hidden py-24 bg-secondary/30">
         <div className="light-orb top-0 left-1/4 h-64 w-64 bg-gold/20" />
-        <div className="relative mx-auto max-w-3xl px-6">
-          <Card className="glass-card border border-primary/40 p-10 text-center shadow-gold md:p-14">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-gold-shine text-primary-foreground shadow-gold">
-              <CalendarDays className="h-7 w-7" />
-            </div>
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Agendamento</span>
+        <div className="relative mx-auto max-w-3xl px-4 md:px-6">
+          <div className="mb-8 text-center">
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Agendamento online</span>
             <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Agende pela nossa <span className="text-gradient-gold italic">agenda semanal</span>
+              Agende seu <span className="text-gradient-gold italic">horário</span>
             </h2>
-            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Querida cliente, a partir de agora os agendamentos da Sabrine Beauty são feitos somente
-              pela nossa agenda semanal online. Lá você vê os horários disponíveis, escolhe o
-              procedimento, faz o pagamento antecipado via Pix e envia o comprovante pelo WhatsApp.
-              A Sabrine confirma o seu horário em até 2 horas.
+            <p className="mt-4 text-muted-foreground">
+              Escolha o procedimento, o dia e o horário livre, pague no Pix e envie o comprovante.
             </p>
-            <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              Essa mudança é para atender cada cliente com mais calma, carinho e pontualidade.
-              Agradecemos de coração pela compreensão e pela confiança!
-            </p>
-            <Button asChild size="lg" className="mt-10 h-14 rounded-full px-10 text-base shadow-gold">
-              <a href={AGENDA_URL} target="_blank" rel="noopener noreferrer">
-                Abrir agenda e marcar meu horário
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </a>
-            </Button>
-          </Card>
+          </div>
+          <BookingFlow
+            services={services}
+            selectedServiceId={selectedServiceId}
+            onSelectService={setSelectedServiceId}
+          />
         </div>
       </section>
 
@@ -591,16 +596,21 @@ function BookingAssistant() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hasSent = useRef(false);
 
+  // Rola só dentro da caixa do chat, e só depois que a cliente enviou mensagem.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!hasSent.current) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
     const userMessage = input.trim();
     setInput("");
+    hasSent.current = true;
     const newMessages = [...messages, { role: "user" as const, content: userMessage }];
     setMessages(newMessages);
     setIsLoading(true);
@@ -629,7 +639,7 @@ function BookingAssistant() {
 
   return (
     <Card className="flex h-[520px] flex-col overflow-hidden border border-border/60 bg-card/80 shadow-card">
-      <div className="flex-1 space-y-4 overflow-y-auto p-6">
+      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-6">
         {messages.map((m, i) => (
           <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
             <div
@@ -646,7 +656,6 @@ function BookingAssistant() {
         {isLoading && (
           <p className="animate-pulse text-sm text-muted-foreground">Pensando...</p>
         )}
-        <div ref={bottomRef} />
       </div>
 
       <div className="border-t border-border/60 p-4">

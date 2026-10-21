@@ -14,4 +14,4 @@
 - Date-specific availability lives in `availability_overrides` (one row per bookable slot start on a specific date). When a date has override rows, only those slots are offered and they appear immediately (bypassing the `advance_booking_days` window); the weekly `availability` rows apply to all other dates.
 
 - `availability_overrides.is_blocked` marks a slot shown as occupied (struck-through) but never bookable; `getAvailableSlots({includeOccupied:true})` is for display only — booking checks must ignore `occupied` slots. Why: owner wants full-looking weeks without fake bookings.
-- Site bookings are created with status `pending_payment` plus a Pix proof uploaded server-side to the private `payment-proofs` bucket; that status blocks the slot. The AI assistant never creates bookings. Why: booking is only guaranteed with prepaid Pix via the site.
+- Site bookings are created by `requestBooking` with status `requested` (no login, no proof upload); that status does NOT block the slot — the owner blocks it in the admin panel after checking the Pix proof sent on WhatsApp. The AI assistant never creates bookings. Why: payment is verified manually by the owner.
