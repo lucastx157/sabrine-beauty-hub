@@ -240,7 +240,7 @@ function HomePage() {
             </div>
             <div className="mt-12 flex items-center gap-6 text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
-                <Star className="h-4 w-4 fill-primary text-primary" /> +2.000 procedimentos
+                <Star className="h-4 w-4 fill-primary text-primary" /> +6 mil atendimentos
               </span>
               <span className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" /> Especialista certificada
@@ -298,8 +298,8 @@ function HomePage() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Especializações</span>
                 </div>
                 <div>
-                  <span className="block font-serif text-4xl text-foreground">2k+</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Procedimentos</span>
+                  <span className="block font-serif text-4xl text-foreground">6k+</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Atendimentos</span>
                 </div>
               </div>
             </div>
