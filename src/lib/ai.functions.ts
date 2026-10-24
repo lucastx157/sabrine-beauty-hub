@@ -77,6 +77,15 @@ const tools = [
 ];
 
 async function callModel(messages: ChatMessage[]) {
+  // Se o projeto tiver a chave da Anthropic, usa o Claude direto (não gasta saldo de IA do Lovable).
+  if (process.env["ANTHROPIC_API_KEY"]) {
+    const { chatCompletionViaClaude } = await import("./claude-chat.server");
+    return (await chatCompletionViaClaude(messages, tools as never, 0.4)) as Awaited<ReturnType<typeof callModelGateway>>;
+  }
+  return callModelGateway(messages);
+}
+
+async function callModelGateway(messages: ChatMessage[]) {
   const response = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
