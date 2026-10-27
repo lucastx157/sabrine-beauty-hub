@@ -64,6 +64,14 @@ function minutesToTimeStr(minutes: number) {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
+/** Horários fixos por dia da semana (0=Dom ... 6=Sáb). Só estes aparecem. */
+const WEEKLY_FIXED_SLOTS: Record<number, string[]> = {
+  2: ["09:00", "10:30", "14:30", "16:30", "17:00"], // Terça
+  3: ["07:30", "08:00", "11:00", "12:00"], // Quarta
+  4: ["07:30", "09:00", "11:00"], // Quinta
+  5: ["08:00", "08:30", "09:30", "11:30", "12:00", "13:00"], // Sexta
+};
+
 export const getAvailableSlots = createServerFn({ method: "POST" })
   .inputValidator((data) => slotSchema.parse(data))
   .handler(async ({ data }) => {
@@ -77,11 +85,8 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
     const effectiveFrom = isBefore(from, today) ? today : from;
     const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 41);
 
-    const { data: availability, error: availError } = await supabaseAdmin
-      .from("availability")
-      .select("*")
-      .eq("active", true);
-    if (availError) throw new Error(availError.message);
+    // Horários semanais fixos vêm de WEEKLY_FIXED_SLOTS (não mais da tabela availability).
+    // Overrides por data (availability_overrides) continuam valendo e têm prioridade.
 
     const { data: bookings, error: bookError } = await supabaseAdmin
       .from("bookings")
@@ -146,28 +151,23 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
           }
         }
       } else {
-        for (const a of availability ?? []) {
-          if (a.day_of_week !== dayOfWeek) continue;
-          const startMin = timeStrToMinutes(a.start_time);
-          const endMin = timeStrToMinutes(a.end_time);
-          const interval = a.slot_interval_minutes ?? 30;
+        // Usa horários fixos definidos no código (só Terça a Sexta)
+        const fixedTimes = WEEKLY_FIXED_SLOTS[dayOfWeek] ?? [];
+        for (const timeStr of fixedTimes) {
+          const t = timeStrToMinutes(timeStr);
+          const slotStart = set(d, {
+            hours: Math.floor(t / 60),
+            minutes: t % 60,
+            seconds: 0,
+            milliseconds: 0,
+          });
+          if (isBefore(slotStart, earliest)) continue;
 
-          for (let t = startMin; t < endMin; t += interval) {
-            const slotStart = set(d, {
-              hours: Math.floor(t / 60),
-              minutes: t % 60,
-              seconds: 0,
-              milliseconds: 0,
-            });
-            if (isBefore(slotStart, earliest)) continue;
-
-            const timeStr = minutesToTimeStr(t);
-            const isBooked = booked.some(
-              (b) => b.date === dateStr && t >= b.start && t < b.end,
-            );
-            if (!isBooked) {
-              daySlots.add(timeStr);
-            }
+          const isBooked = booked.some(
+            (b) => b.date === dateStr && t >= b.start && t < b.end,
+          );
+          if (!isBooked) {
+            daySlots.add(timeStr);
           }
         }
       }
