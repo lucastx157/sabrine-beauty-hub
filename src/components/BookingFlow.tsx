@@ -311,7 +311,7 @@ export function BookingFlow({
         </ul>
       </div>
 
-      <div className="rounded-2xl bg-gradient-gold-shine p-5 text-center text-primary-foreground shadow-gold">
+      <div className="rounded-2xl bg-gradient-to-r from-gold-dark via-primary to-gold p-5 text-center text-primary-foreground shadow-gold">
         <p className="font-serif text-lg">Fiquem ligadas! 💖</p>
         <p className="mt-1 text-sm font-medium">A agenda da próxima semana sai no domingo de manhã.</p>
       </div>
