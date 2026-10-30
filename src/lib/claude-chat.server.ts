@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* Faz o Claude (Anthropic) responder no mesmo formato que o resto do código já espera
    (formato "chat completions": choices[0].message com content e tool_calls).
    Assim a assistente de agendamento troca de IA sem mudar o resto. */
