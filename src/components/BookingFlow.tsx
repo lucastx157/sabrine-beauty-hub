@@ -310,6 +310,11 @@ export function BookingFlow({
           <li>Se duas pessoas pagarem o mesmo horário, fica quem mandou o comprovante primeiro.</li>
         </ul>
       </div>
+
+      <div className="rounded-2xl bg-gradient-gold-shine p-5 text-center text-primary-foreground shadow-gold">
+        <p className="font-serif text-lg">Fiquem ligadas! 💖</p>
+        <p className="mt-1 text-sm font-medium">A agenda da próxima semana sai no domingo de manhã.</p>
+      </div>
     </Card>
   );
 }
