@@ -380,7 +380,6 @@ function HomePage() {
                     loading="lazy"
                   />
                 </div>
-                </div>
                 <h4 className="font-serif text-xl text-foreground">{item.title}</h4>
                 <p className="mt-2 text-sm text-brown-light">{item.subtitle}</p>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
@@ -440,7 +439,7 @@ function HomePage() {
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             {specialServices.map((item) => (
-              <Card key={item.name} className="flex flex-col border border-border/60 bg-card/80 p-6 shadow-card transition-all hover:-translate-y-2 hover:shadow-gold">
+              <Card key={item.name} className="flex flex-col border border-border bg-card p-6 transition-colors hover:border-brown-light">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>
