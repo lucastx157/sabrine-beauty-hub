@@ -13,7 +13,6 @@ import {
   Crown,
   GraduationCap,
   Award,
-  Medal,
   Trophy,
   Star,
   ArrowRight,
@@ -106,12 +105,6 @@ const awards = [
     title: "Troféu Estrela",
     description: "Destaque entre os profissionais da beleza de Minas Gerais pela excelência dos resultados.",
   },
-  {
-    icon: Medal,
-    image: "/images/destaque-rainha.jpg",
-    title: "A escolha das personalidades",
-    description: "Responsável pela produção da Rainha da Expo Samonte e de clientes em eventos da região.",
-  },
 ];
 
 const gallery = [
@@ -122,22 +115,10 @@ const gallery = [
     description: "Técnica de fios ultra-finos desenhados um a um para preencher falhas e criar sobrancelhas naturais e harmoniosas.",
   },
   {
-    image: "/images/procedure-design-henna.jpg",
-    title: "Design com Henna",
-    subtitle: "Cor e definição",
-    description: "Mapeamento facial + henna premium para preencher e definir o contorno ideal do seu olhar.",
-  },
-  {
     image: "/images/procedure-labial.jpg",
     title: "Micropigmentação Labial",
     subtitle: "Lábios definidos",
     description: "Contorno desenhado e cor natural revitalizada, com acabamento hidratado e aspecto saudável.",
-  },
-  {
-    image: "/images/destaque-rainha.jpg",
-    title: "Produção Especial",
-    subtitle: "Rainha Expo Samonte",
-    description: "Sobrancelhas e produção para eventos e concursos, com acabamento impecável em cada detalhe.",
   },
 ];
 
@@ -313,7 +294,7 @@ function HomePage() {
               Certificados e Prêmios
             </h2>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
             {awards.map((award, i) => (
               <Card
                 key={award.title}
@@ -354,7 +335,7 @@ function HomePage() {
               Galeria de <span className="italic">Resultados</span>
             </h2>
           </div>
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-10 md:grid-cols-2">
             {gallery.map((item) => (
               <div key={item.title} className="group">
                 <div className="relative mb-6 aspect-[4/5] overflow-hidden">
