@@ -85,6 +85,16 @@ function priceRange(service: Service) {
   return min;
 }
 
+/** Foto pequena de cada procedimento (pelo nome). Sem foto, mostra o ícone. */
+const PROCEDURE_PHOTOS: Record<string, string> = {
+  "micropigmentação de sobrancelhas": "/images/procedure-microblading.jpg",
+  "micropigmentação labial": "/images/procedure-labial.jpg",
+};
+
+function procedurePhoto(name: string) {
+  return PROCEDURE_PHOTOS[name.trim().toLowerCase()];
+}
+
 function durationRange(service: Service) {
   if (service.duration_max && service.duration_max !== service.duration_min) {
     return `${service.duration_min} a ${service.duration_max} min`;
@@ -204,11 +214,26 @@ function HomePage() {
                 className="group flex flex-col overflow-hidden border border-border/60 bg-card transition-colors hover:border-brown-light"
               >
                 <div className="flex flex-1 flex-col p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <Scissors className="h-5 w-5" />
+                  <div className="flex items-center gap-4">
+                    {procedurePhoto(service.name) ? (
+                      <img
+                        src={procedurePhoto(service.name)}
+                        alt={service.name}
+                        className="h-16 w-16 shrink-0 rounded-md object-cover"
+                        width={64}
+                        height={64}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <Scissors className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="text-xl font-semibold text-card-foreground">{service.name}</h3>
+                      <p className="mt-1 text-lg font-semibold text-primary">{priceRange(service)}</p>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-card-foreground">{service.name}</h3>
-                  <p className="mt-1 text-lg font-semibold text-primary">{priceRange(service)}</p>
                   <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
                   </p>
