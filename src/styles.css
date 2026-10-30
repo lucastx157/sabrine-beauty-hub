@@ -51,29 +51,29 @@
   --radius: 0.75rem;
 
   /* Champagne + espresso-plum palette */
-  --background: oklch(0.92 0.03 30);
-  --foreground: oklch(0.2 0.05 350);
-  --card: oklch(0.955 0.02 30);
+  --background: oklch(0.94 0.03 165);
+  --foreground: oklch(0.22 0.05 220);
+  --card: oklch(0.965 0.02 160);
   --card-foreground: oklch(0.2 0.04 20);
-  --popover: oklch(0.955 0.02 30);
+  --popover: oklch(0.965 0.02 160);
   --popover-foreground: oklch(0.2 0.04 20);
-  --primary: oklch(0.36 0.11 355);
+  --primary: oklch(0.36 0.08 215);
   --primary-foreground: oklch(0.97 0.015 75);
-  --secondary: oklch(0.87 0.04 20);
+  --secondary: oklch(0.89 0.04 170);
   --secondary-foreground: oklch(0.25 0.05 20);
-  --muted: oklch(0.88 0.035 25);
-  --muted-foreground: oklch(0.42 0.05 25);
-  --accent: oklch(0.84 0.06 15);
+  --muted: oklch(0.9 0.03 170);
+  --muted-foreground: oklch(0.42 0.05 215);
+  --accent: oklch(0.86 0.06 175);
   --accent-foreground: oklch(0.2 0.04 20);
   --destructive: oklch(0.52 0.2 25);
   --destructive-foreground: oklch(0.97 0.015 75);
-  --border: oklch(0.8 0.05 20);
-  --input: oklch(0.8 0.05 20);
-  --ring: oklch(0.36 0.11 355);
+  --border: oklch(0.82 0.04 180);
+  --input: oklch(0.82 0.04 180);
+  --ring: oklch(0.36 0.08 215);
 
-  --cream: oklch(0.9 0.035 30);
-  --gold: oklch(0.72 0.1 30);
-  --gold-dark: oklch(0.36 0.11 355);
+  --cream: oklch(0.92 0.035 165);
+  --gold: oklch(0.78 0.11 170);
+  --gold-dark: oklch(0.32 0.08 230);
   --rose: oklch(0.62 0.12 15);
   --success: oklch(0.52 0.13 155);
   --success-foreground: oklch(0.97 0.015 75);
@@ -144,7 +144,7 @@
   }
 
   .bg-gradient-gold-shine {
-    background: linear-gradient(135deg, var(--color-gold) 0%, oklch(0.9 0.1 85) 50%, var(--color-gold-dark) 100%);
+    background: linear-gradient(135deg, var(--color-gold) 0%, oklch(0.88 0.08 165) 50%, var(--color-gold-dark) 100%);
   }
 
   .shadow-card {
@@ -181,7 +181,7 @@
   }
 
   .glass-card {
-    background: oklch(0.955 0.02 30 / 0.6);
+    background: oklch(0.965 0.02 160 / 0.6);
     backdrop-filter: blur(12px);
     border: 1px solid oklch(0.72 0.14 80 / 0.25);
   }
