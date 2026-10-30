@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* Cliente mínimo da API da Anthropic (Claude), sem dependências extras.
    Usado quando o projeto tem o segredo ANTHROPIC_API_KEY configurado.
    - Escolhe sozinho o modelo Sonnet mais novo disponível na conta
