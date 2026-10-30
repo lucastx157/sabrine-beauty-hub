@@ -28,6 +28,7 @@ import { chatWithAssistant } from "@/lib/ai.functions";
 import { formatCurrencyCents } from "@/lib/dates";
 import { toast } from "sonner";
 import { BookingFlow } from "@/components/BookingFlow";
+import { CinematicHero } from "@/components/CinematicHero";
 
 const servicesQueryOptions = queryOptions({
   queryKey: ["services"],
@@ -181,7 +182,7 @@ function HomePage() {
 
   return (
     <div className="editorial-site relative min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background">
+      <header className="dark sticky top-0 z-40 border-b border-border bg-background/85 text-foreground backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 md:px-8 md:py-5">
           <a href="#" className="font-serif text-lg font-semibold text-foreground md:text-2xl" aria-label="Sabrine Beauty — início">Sabrine Beauty<span className="text-gold">.</span></a>
           <nav aria-label="Navegação principal" className="hidden items-center gap-7 text-sm text-muted-foreground lg:flex">
@@ -201,21 +202,7 @@ function HomePage() {
         </nav>}
       </header>
 
-      <section className="editorial-hero relative flex items-center overflow-hidden">
-        <img src="/images/hero.jpg" alt="Sabrine, especialista em beleza e design de sobrancelhas" className="absolute inset-0 h-full w-full object-cover" width={1280} height={800} fetchPriority="high" />
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-14 text-primary-foreground md:px-10">
-          <p className="mb-6 text-sm">Design de sobrancelhas &amp; estética</p>
-          <h1 className="max-w-xl font-serif text-5xl leading-[1.08] md:text-7xl">Sabrine<br /><span className="italic">Beauty</span></h1>
-          <p className="mt-6 max-w-sm text-base leading-relaxed text-primary-foreground/90 md:text-lg">A essência do olhar perfeito. Técnica exclusiva Sabrine para sobrancelhas e lábios que harmonizam com o seu rosto.</p>
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Button size="lg" variant="secondary" className="h-12 px-6" onClick={() => goToBooking()}>Agendar agora <ArrowRight /></Button>
-            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4"><Instagram className="h-4 w-4" /> Ver no Instagram</a>
-          </div>
-          <div className="mt-10 flex flex-wrap gap-5 border-t border-primary-foreground/25 pt-5 text-xs text-primary-foreground/90 md:text-sm">
-            <span>+6 mil atendimentos</span><span>Especialista certificada</span>
-          </div>
-        </div>
-      </section>
+      <CinematicHero onBook={() => goToBooking()} instagramUrl={INSTAGRAM_URL} />
 
       {/* Services */}
       <section id="servicos" className="relative py-16 md:py-24">
