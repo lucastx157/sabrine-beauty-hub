@@ -11,6 +11,8 @@
 
 ## Architecture decisions
 
+- Keep visual identity in semantic tokens in `src/styles.css` and preserve booking logic independently of presentation; staged redesigns must not modify commercial rules or stored availability.
+
 - Date-specific availability lives in `availability_overrides` (one row per bookable slot start on a specific date). When a date has override rows, only those slots are offered and they appear immediately (bypassing the `advance_booking_days` window); the weekly `availability` rows apply to all other dates.
 
 - `availability_overrides.is_blocked` marks a slot shown as occupied (struck-through) but never bookable; `getAvailableSlots({includeOccupied:true})` is for display only — booking checks must ignore `occupied` slots. Why: owner wants full-looking weeks without fake bookings.
