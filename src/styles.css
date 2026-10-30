@@ -50,36 +50,35 @@
 :root {
   --radius: 0.75rem;
 
-  /* Warm, elegant beauty palette */
-  --background: oklch(0.98 0.01 80);
-  --foreground: oklch(0.24 0.03 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.24 0.03 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.24 0.03 60);
-  --primary: oklch(0.55 0.12 75);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.94 0.02 80);
-  --secondary-foreground: oklch(0.3 0.04 60);
-  --muted: oklch(0.93 0.02 80);
-  --muted-foreground: oklch(0.5 0.04 60);
-  --accent: oklch(0.92 0.03 75);
-  --accent-foreground: oklch(0.24 0.03 60);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.88 0.02 80);
-  --input: oklch(0.88 0.02 80);
-  --ring: oklch(0.55 0.12 75);
+  /* Champagne + espresso-plum palette */
+  --background: oklch(0.94 0.025 70);
+  --foreground: oklch(0.2 0.04 20);
+  --card: oklch(0.965 0.02 75);
+  --card-foreground: oklch(0.2 0.04 20);
+  --popover: oklch(0.965 0.02 75);
+  --popover-foreground: oklch(0.2 0.04 20);
+  --primary: oklch(0.5 0.11 45);
+  --primary-foreground: oklch(0.97 0.015 75);
+  --secondary: oklch(0.89 0.035 55);
+  --secondary-foreground: oklch(0.25 0.05 20);
+  --muted: oklch(0.9 0.03 65);
+  --muted-foreground: oklch(0.42 0.05 25);
+  --accent: oklch(0.86 0.05 40);
+  --accent-foreground: oklch(0.2 0.04 20);
+  --destructive: oklch(0.52 0.2 25);
+  --destructive-foreground: oklch(0.97 0.015 75);
+  --border: oklch(0.83 0.04 55);
+  --input: oklch(0.83 0.04 55);
+  --ring: oklch(0.5 0.11 45);
 
-  /* Extra semantic tokens */
-  --cream: oklch(0.97 0.02 80);
-  --gold: oklch(0.72 0.14 80);
-  --gold-dark: oklch(0.55 0.14 75);
-  --rose: oklch(0.7 0.16 15);
-  --success: oklch(0.58 0.15 150);
-  --success-foreground: oklch(0.99 0 0);
-  --brown: oklch(0.4 0.08 55);
-  --brown-light: oklch(0.6 0.07 60);
+  --cream: oklch(0.92 0.03 70);
+  --gold: oklch(0.74 0.12 70);
+  --gold-dark: oklch(0.45 0.1 40);
+  --rose: oklch(0.62 0.12 15);
+  --success: oklch(0.52 0.13 155);
+  --success-foreground: oklch(0.97 0.015 75);
+  --brown: oklch(0.3 0.06 25);
+  --brown-light: oklch(0.55 0.07 35);
 }
 
 .dark {
@@ -182,7 +181,7 @@
   }
 
   .glass-card {
-    background: oklch(1 0 0 / 0.45);
+    background: oklch(0.965 0.02 75 / 0.55);
     backdrop-filter: blur(12px);
     border: 1px solid oklch(0.72 0.14 80 / 0.25);
   }
