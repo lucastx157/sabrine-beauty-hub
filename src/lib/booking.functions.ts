@@ -151,8 +151,9 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
           }
         }
       } else {
-        // Usa horários fixos definidos no código (só Terça a Sexta)
-        const fixedTimes = WEEKLY_FIXED_SLOTS[dayOfWeek] ?? [];
+        // Só datas cadastradas na agenda aparecem; sem grade semanal automática.
+        const fixedTimes: string[] = [];
+        void WEEKLY_FIXED_SLOTS[dayOfWeek];
         for (const timeStr of fixedTimes) {
           const t = timeStrToMinutes(timeStr);
           const slotStart = set(d, {
