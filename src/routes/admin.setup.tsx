@@ -12,6 +12,10 @@ export const Route = createFileRoute("/admin/setup")({
     meta: [
       { title: "Configurar Administrador | Sabrine Beauty Flow" },
       { name: "description", content: "Criação do primeiro usuário administrador." },
+      { property: "og:title", content: "Configurar Administrador | Sabrine Beauty Flow" },
+      { property: "og:description", content: "Criação do primeiro usuário administrador da Sabrine Beauty." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdminSetupPage,

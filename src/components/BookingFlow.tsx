@@ -139,7 +139,7 @@ export function BookingFlow({
   if (done && service && date && time) {
     return (
       <Card className="glass-card border border-success/40 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success text-success-foreground">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-md bg-success text-success-foreground">
           <Check className="h-7 w-7" />
         </div>
         <h3 className="font-serif text-2xl text-foreground">Pedido enviado!</h3>
@@ -149,7 +149,7 @@ export function BookingFlow({
         <p className="mt-3 font-semibold text-foreground">
           Seu horário só está marcado depois do ok da Sabrine (até 8 horas).
         </p>
-        <Button variant="outline" className="mt-6 rounded-full" onClick={() => { setDone(false); setShowPix(false); setDate(null); setTime(null); }}>
+        <Button variant="outline" className="mt-6 rounded-md" onClick={() => { setDone(false); setShowPix(false); setDate(null); setTime(null); }}>
           Fazer outro agendamento
         </Button>
       </Card>
@@ -157,17 +157,17 @@ export function BookingFlow({
   }
 
   return (
-    <Card className="glass-card space-y-8 border border-primary/30 p-5 text-left md:p-10">
+    <div className="space-y-8 text-left">
       {/* 1. Procedimento */}
       <div>
         <h3 className="mb-3 font-serif text-xl text-foreground">1. Procedimento</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           {services.map((s) => (
-            <button
+            <Button variant="outline"
               key={s.id}
               type="button"
               onClick={() => onSelectService(s.id)}
-              className={`rounded-xl border p-3 text-left text-sm transition-colors ${
+              className={`h-auto min-h-20 flex-col items-start whitespace-normal rounded-md border p-3 text-left text-sm transition-colors ${
                 s.id === selectedServiceId ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
               }`}
             >
@@ -175,7 +175,7 @@ export function BookingFlow({
               <span className="text-primary">
                 {s.deposit_cents ? `Sinal ${formatCurrencyCents(s.deposit_cents)} no Pix` : formatCurrencyCents(s.price_min ?? 0)}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -195,12 +195,12 @@ export function BookingFlow({
                 {days.map(([d, times]) => {
                   const p = dateParts(d);
                   return (
-                    <button
+                    <Button variant="outline"
                       key={d}
                       type="button"
                       aria-label={`Dia ${p.label}`}
                       onClick={() => { setDate(d); setTime(null); }}
-                      className={`flex min-w-[72px] shrink-0 flex-col items-center rounded-xl border px-3 py-2 text-sm ${
+                      className={`flex h-auto min-w-[72px] shrink-0 flex-col items-center rounded-md border px-3 py-2 text-sm ${
                         d === date ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
                       }`}
                     >
@@ -208,25 +208,25 @@ export function BookingFlow({
                       <span className="text-lg font-semibold">{p.day}</span>
                       <span className="text-xs">{p.month}</span>
                       <span className="mt-1 text-[10px]">{times.length} {times.length === 1 ? "vaga" : "vagas"}</span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
               {date && (
                 <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
                   {(days.find(([d]) => d === date)?.[1] ?? []).map((t) => (
-                    <button
+                    <Button variant="outline"
                       key={t}
                       type="button"
                       onClick={() => setTime(t)}
-                      className={`rounded-lg border-2 py-2 text-sm font-semibold transition-colors ${
+                      className={`h-11 rounded-md border-2 py-2 text-sm font-semibold transition-colors ${
                         t === time
                           ? "border-success bg-success text-success-foreground"
                           : "border-success/60 bg-success/10 text-success hover:bg-success/20"
                       }`}
                     >
                       {t}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -254,7 +254,7 @@ export function BookingFlow({
       {/* 4. Pix */}
       {service && !showPix && (
         <div>
-          <Button size="lg" className="h-14 w-full rounded-full text-base shadow-gold" onClick={goToPix}>
+          <Button size="lg" className="h-14 w-full rounded-md text-base" onClick={goToPix}>
             Continuar para o pagamento Pix
           </Button>
           {missing.length > 0 && (
@@ -266,7 +266,7 @@ export function BookingFlow({
       )}
 
       {service && showPix && date && time && (
-        <div className="space-y-4 rounded-2xl border border-primary/40 bg-primary/5 p-5">
+        <div className="space-y-4 rounded-md border border-primary/40 bg-primary/5 p-5">
           <h3 className="font-serif text-xl text-foreground">4. Pagamento via Pix</h3>
           <p className="text-sm text-muted-foreground">
             {service.name} · {dateParts(date).label} às {time}
@@ -278,27 +278,27 @@ export function BookingFlow({
               <p className="text-xs text-muted-foreground">Sinal para reservar. O restante é pago no dia (Pix ou cartão).</p>
             )}
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="rounded-md border border-border bg-card p-4">
             <p className="text-xs text-muted-foreground">Chave Pix (celular) · Recebedora: Sabrine</p>
             <p className="font-mono text-lg font-semibold text-foreground">{PIX_KEY}</p>
-            <Button variant="outline" className="mt-3 w-full rounded-full" onClick={() => void copyPix()}>
+            <Button variant="outline" className="mt-3 w-full rounded-md" onClick={() => void copyPix()}>
               <Copy className="mr-2 h-4 w-4" /> Copiar chave Pix
             </Button>
           </div>
-          <Button size="lg" disabled={sending} className="h-14 w-full rounded-full text-base shadow-gold" onClick={() => void sendProof()}>
+          <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void sendProof()}>
             {sending ? "Enviando..." : "Já paguei, enviar comprovante"}
           </Button>
           <p className="text-center text-sm font-semibold text-foreground">
             Seu horário só está marcado depois do ok da Sabrine (até 8 horas).
           </p>
-          <button type="button" className="w-full text-xs text-muted-foreground underline" onClick={() => setShowPix(false)}>
+          <Button variant="outline" type="button" className="h-auto w-full border-0 bg-transparent text-xs text-muted-foreground underline" onClick={() => setShowPix(false)}>
             Voltar e alterar dados
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Regras */}
-      <div className="rounded-2xl border border-border bg-card/60 p-5 text-sm text-muted-foreground">
+      <div className="rounded-md border border-border bg-card/60 p-5 text-sm text-muted-foreground">
         <p className="mb-2 flex items-center gap-2 font-semibold text-foreground">
           <ShieldCheck className="h-4 w-4 text-primary" /> Regras do agendamento
         </p>
@@ -311,10 +311,10 @@ export function BookingFlow({
         </ul>
       </div>
 
-      <div className="rounded-2xl bg-gradient-to-r from-gold-dark via-primary to-gold p-5 text-center text-primary-foreground shadow-gold">
-        <p className="font-serif text-lg">Fiquem ligadas! 💖</p>
+      <div className="border-t border-gold pt-6 text-center text-foreground">
+        <p className="font-serif text-lg">Fiquem ligadas!</p>
         <p className="mt-1 text-sm font-medium">A agenda da próxima semana sai no domingo de manhã.</p>
       </div>
-    </Card>
+    </div>
   );
 }

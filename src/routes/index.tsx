@@ -17,6 +17,8 @@ import {
   Trophy,
   Star,
   ArrowRight,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -163,6 +165,7 @@ const specialServices = [
 
 function HomePage() {
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
 
   // Sempre abrir no topo (exceto links com #).
@@ -177,115 +180,122 @@ function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      {/* Ambient light orbs */}
-      <div className="light-orb -top-[20%] -left-[10%] h-[60%] w-[60%] bg-rose/20" />
-      <div className="light-orb -bottom-[10%] -right-[10%] h-[50%] w-[50%] bg-gold/15" />
-      <div className="light-orb top-[40%] left-[30%] h-[30%] w-[30%] bg-gold/10" />
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-gold-shine font-serif text-lg font-semibold text-primary-foreground shadow-gold">
-              S
-            </span>
-            <div className="leading-tight">
-              <p className="font-serif text-base font-semibold text-foreground">Sabrine Beauty</p>
-              <p className="text-xs text-muted-foreground">Design &amp; Estética</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="hidden items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary sm:flex"
-            >
-              <Instagram className="h-4 w-4" /> @sabrine_sobrancelhas
-            </a>
-            <Button asChild size="sm" className="rounded-full shadow-gold">
-              <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">
-                Contato
-              </a>
-            </Button>
+    <div className="editorial-site relative min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b border-border bg-background">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 md:px-8 md:py-5">
+          <a href="#" className="font-serif text-lg font-semibold text-foreground md:text-2xl" aria-label="Sabrine Beauty — início">Sabrine Beauty<span className="text-gold">.</span></a>
+          <nav aria-label="Navegação principal" className="hidden items-center gap-7 text-sm text-muted-foreground lg:flex">
+            <a href="#servicos" className="hover:text-foreground">Procedimentos</a>
+            <a href="#sobre" className="hover:text-foreground">A Sabrine</a>
+            <a href="#resultados" className="hover:text-foreground">Resultados</a>
+            <a href="#mentoria" className="hover:text-foreground">Mentoria</a>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => { setMenuOpen(false); goToBooking(); }} className="h-10 px-4 text-xs md:text-sm">Agendar horário <ArrowRight /></Button>
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} aria-controls="mobile-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</Button>
           </div>
         </div>
+        {menuOpen && <nav id="mobile-menu" aria-label="Navegação no celular" className="grid gap-1 border-t border-border px-5 py-3 lg:hidden">
+          {[["#servicos", "Procedimentos"], ["#sobre", "A Sabrine"], ["#resultados", "Resultados"], ["#mentoria", "Mentoria"], ["#assistente", "Assistente"]].map(([href, label]) => <Button key={href} asChild variant="ghost" className="justify-start" onClick={() => setMenuOpen(false)}><a href={href}>{label}</a></Button>)}
+          <Button asChild variant="ghost" className="justify-start"><a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">Contato <Phone /></a></Button>
+        </nav>}
       </header>
 
-      {/* Hero */}
-      <section className="relative flex min-h-screen items-center justify-center px-6 py-20">
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-16 lg:grid-cols-2">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-medium tracking-wider text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> Excelência em cada detalhe
-            </div>
-            <h1 className="font-serif text-5xl leading-[1.1] font-semibold tracking-tight text-foreground md:text-7xl">
-              A Essência do <br />
-              <span className="text-gradient-gold italic">Olhar Perfeito</span>
-            </h1>
-            <p className="mt-8 max-w-lg text-lg text-muted-foreground leading-relaxed">
-              Transformações personalizadas que elevam sua beleza natural ao nível da arte. Técnica
-              exclusiva Sabrine para sobrancelhas e lábios que harmonizam com o seu rosto.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Button size="lg" className="rounded-full px-8 shadow-gold" onClick={() => goToBooking()}>
-                Agendar agora
-              </Button>
-              <Button asChild variant="outline" size="lg" className="rounded-full px-8">
-                <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
-                  Ver no Instagram
-                </a>
-              </Button>
-            </div>
-            <div className="mt-12 flex items-center gap-6 text-sm text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <Star className="h-4 w-4 fill-primary text-primary" /> +6 mil atendimentos
-              </span>
-              <span className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" /> Especialista certificada
-              </span>
-            </div>
+      <section className="editorial-hero relative flex items-center overflow-hidden">
+        <img src="/images/hero.jpg" alt="Sabrine, especialista em beleza e design de sobrancelhas" className="absolute inset-0 h-full w-full object-cover" width={1280} height={800} fetchPriority="high" />
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-14 text-primary-foreground md:px-10">
+          <p className="mb-6 text-sm">Design de sobrancelhas &amp; estética</p>
+          <h1 className="max-w-xl font-serif text-5xl leading-[1.08] md:text-7xl">Sabrine<br /><span className="italic">Beauty</span></h1>
+          <p className="mt-6 max-w-sm text-base leading-relaxed text-primary-foreground/90 md:text-lg">A essência do olhar perfeito. Técnica exclusiva Sabrine para sobrancelhas e lábios que harmonizam com o seu rosto.</p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Button size="lg" variant="secondary" className="h-12 px-6" onClick={() => goToBooking()}>Agendar agora <ArrowRight /></Button>
+            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 text-sm underline underline-offset-4"><Instagram className="h-4 w-4" /> Ver no Instagram</a>
           </div>
+          <div className="mt-10 flex flex-wrap gap-5 border-t border-primary-foreground/25 pt-5 text-xs text-primary-foreground/90 md:text-sm">
+            <span>+6 mil atendimentos</span><span>Especialista certificada</span>
+          </div>
+        </div>
+      </section>
 
-          <div className="perspective-1000 relative flex justify-center lg:justify-end">
-            <div className="absolute -inset-10 rounded-full bg-primary/10 blur-3xl animate-pulse" />
-            <div className="floating-3d relative w-full max-w-md">
-              <img
-                src="/images/hero.jpg"
-                alt="Design de sobrancelhas"
-                className="relative z-10 w-full rounded-2xl shadow-2xl"
-                width={1280}
-                height={800}
-              />
-              <div className="absolute -bottom-6 -left-6 z-20 hidden rounded-xl border border-primary/20 bg-card p-5 shadow-card md:block">
-                <p className="font-serif text-2xl text-gradient-gold italic">Elegância</p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Redefinida</p>
+      {/* Services */}
+      <section id="servicos" className="relative py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-16 text-center">
+            <span className="text-xs font-semibold text-brown-light">Nossos serviços</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+              Procedimentos &amp; Valores
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Toque no procedimento desejado para escolher o dia e o horário do seu atendimento.
+            </p>
+          </div>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {services.map((service) => (
+              <Card
+                key={service.id}
+                className="group flex flex-col overflow-hidden border border-border/60 bg-card transition-colors hover:border-brown-light"
+              >
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Scissors className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-card-foreground">{service.name}</h3>
+                  <p className="mt-1 text-lg font-semibold text-primary">{priceRange(service)}</p>
+                  <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
+                  </p>
+                  <p className="mt-4 flex-1 text-sm text-muted-foreground">{service.description}</p>
+                  {service.price_note && (
+                    <p className="mt-3 text-xs text-muted-foreground">{service.price_note}</p>
+                  )}
+                  <Button variant="outline" className="mt-6 rounded-md group/btn" onClick={() => goToBooking(service.id)}>
+                    Escolher horário
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+
+            {/* AI helper card */}
+            <Card className="flex flex-col justify-between border border-primary/30 bg-secondary p-6">
+              <div>
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/15 text-primary">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-semibold text-card-foreground">
+                  Não sabe qual procedimento escolher?
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Conte como são suas sobrancelhas ou lábios e o que você deseja. Nossa assistente de
+                  IA indica o procedimento ideal para você.
+                </p>
               </div>
-            </div>
+              <Button asChild className="mt-6 rounded-md">
+                <a href="#assistente">Descobrir meu procedimento</a>
+              </Button>
+            </Card>
           </div>
         </div>
       </section>
 
       {/* About Sabrine */}
-      <section className="relative py-32">
+      <section id="sobre" className="relative py-16 md:py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid items-center gap-16 lg:grid-cols-2">
             <div className="relative order-2 lg:order-1">
-              <div className="absolute -top-8 -right-8 h-40 w-40 border-r-2 border-t-2 border-primary/20" />
               <img
                 src="/images/sabrine.jpg"
                 alt="Sabrine Beauty Specialist"
-                className="relative z-10 w-full rounded-sm grayscale transition-all duration-1000 hover:grayscale-0 shadow-2xl"
+                className="relative w-full max-h-[640px] object-cover"
                 width={800}
                 height={1000}
                 loading="lazy"
               />
             </div>
             <div className="order-1 lg:order-2">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">A especialista</span>
-              <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-                Sobre a <span className="text-gradient-gold italic">Sabrine</span>
+              <span className="text-xs font-semibold text-brown-light">A especialista</span>
+              <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+                Sobre a <span className="italic">Sabrine</span>
               </h2>
               <p className="mt-6 text-lg leading-loose text-muted-foreground">
                 Especialista em visagismo facial e design de sobrancelhas, dedica sua carreira a
@@ -307,75 +317,85 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Services */}
-      <section id="servicos" className="relative py-32">
-        <div className="mx-auto max-w-7xl px-6">
+      {/* Awards */}
+      <section className="relative overflow-hidden bg-secondary py-16 md:py-24">
+        <div className="relative z-10 mx-auto max-w-7xl px-6">
           <div className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Nossos serviços</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Procedimentos &amp; Valores
+            <span className="text-xs font-semibold text-brown-light">Excelência e reconhecimento</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+              Certificados e Prêmios
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Toque no procedimento desejado para escolher o dia e o horário do seu atendimento.
-            </p>
           </div>
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {services.map((service) => (
+          <div className="grid gap-8 md:grid-cols-3">
+            {awards.map((award, i) => (
               <Card
-                key={service.id}
-                className="group flex flex-col overflow-hidden border border-border/60 bg-card/80 shadow-card transition-all hover:-translate-y-2 hover:shadow-gold"
+                key={award.title}
+                className="group overflow-hidden border-border bg-card p-0"
               >
-                <div className="flex flex-1 flex-col p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Scissors className="h-5 w-5" />
+                <div className="relative aspect-[4/5] overflow-hidden">
+                  <img
+                    src={award.image}
+                    alt={award.title}
+                    className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.02]"
+                    width={800}
+                    height={1000}
+                    loading="lazy"
+                  />
+                  <div className="absolute left-5 top-5 flex h-11 w-11 items-center justify-center rounded-md bg-background text-foreground">
+                    <award.icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-xl font-semibold text-card-foreground">{service.name}</h3>
-                  <p className="mt-1 text-lg font-semibold text-primary">{priceRange(service)}</p>
-                  <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" /> Duração: {durationRange(service)}
+                </div>
+                <div className="p-8">
+                  <div className="mb-3 font-serif text-3xl italic text-primary">0{i + 1}</div>
+                  <h4 className="font-serif text-xl text-foreground">{award.title}</h4>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {award.description}
                   </p>
-                  <p className="mt-4 flex-1 text-sm text-muted-foreground">{service.description}</p>
-                  {service.price_note && (
-                    <p className="mt-3 text-xs text-muted-foreground">{service.price_note}</p>
-                  )}
-                  <Button variant="outline" className="mt-6 rounded-full group/btn" onClick={() => goToBooking(service.id)}>
-                    Escolher horário
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                  </Button>
                 </div>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
 
-            {/* AI helper card */}
-            <Card className="flex flex-col justify-between border border-primary/30 bg-primary/5 p-6 shadow-card transition-all hover:-translate-y-2 hover:shadow-gold">
-              <div>
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-                  <Sparkles className="h-5 w-5" />
+      {/* Results Gallery */}
+      <section id="resultados" className="relative py-16 md:py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-16 text-center">
+            <span className="text-xs font-semibold text-brown-light">Resultados reais</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+              Galeria de <span className="italic">Resultados</span>
+            </h2>
+          </div>
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+            {gallery.map((item) => (
+              <div key={item.title} className="group">
+                <div className="relative mb-6 aspect-[4/5] overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-[1.02]"
+                    width={800}
+                    height={1000}
+                    loading="lazy"
+                  />
                 </div>
-                <h3 className="text-xl font-semibold text-card-foreground">
-                  Não sabe qual procedimento escolher?
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Conte como são suas sobrancelhas ou lábios e o que você deseja. Nossa assistente de
-                  IA indica o procedimento ideal para você.
-                </p>
+                <h4 className="font-serif text-xl text-foreground">{item.title}</h4>
+                <p className="mt-2 text-sm text-brown-light">{item.subtitle}</p>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
               </div>
-              <Button asChild className="mt-6 rounded-full">
-                <a href="#assistente">Descobrir meu procedimento</a>
-              </Button>
-            </Card>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Booking */}
-      <section id="agendamento" className="relative scroll-mt-20 overflow-hidden py-24 bg-secondary/30">
-        <div className="light-orb top-0 left-1/4 h-64 w-64 bg-gold/20" />
+      <section id="agendamento" className="relative scroll-mt-20 border-y border-border bg-secondary py-16 md:py-24">
         <div className="relative mx-auto max-w-3xl px-4 md:px-6">
           <div className="mb-8 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Agendamento online</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Agende seu <span className="text-gradient-gold italic">horário</span>
+            <span className="text-xs font-semibold text-brown-light">Agendamento online</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+              Agende seu <span className="italic">horário</span>
             </h2>
             <p className="mt-4 text-muted-foreground">
               Escolha o procedimento, o dia e o horário livre, pague no Pix e envie o comprovante.
@@ -389,97 +409,12 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Awards */}
-      <section className="relative overflow-hidden bg-brown py-28">
-        <div className="absolute inset-0 opacity-[0.03]">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 2px 2px, oklch(0.9 0.1 80) 1px, transparent 0)",
-              backgroundSize: "40px 40px",
-            }}
-          />
-        </div>
-        <div className="relative z-10 mx-auto max-w-7xl px-6">
-          <div className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Excelência e reconhecimento</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-primary-foreground md:text-5xl">
-              Certificados e Prêmios
-            </h2>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {awards.map((award, i) => (
-              <Card
-                key={award.title}
-                className="glass-card group overflow-hidden p-0 transition-all hover:-translate-y-3 hover:shadow-gold"
-              >
-                <div className="relative aspect-[4/5] overflow-hidden">
-                  <img
-                    src={award.image}
-                    alt={award.title}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    width={800}
-                    height={1000}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-brown/80 via-transparent to-transparent" />
-                  <div className="absolute left-5 top-5 flex h-11 w-11 items-center justify-center rounded-full bg-primary/90 text-white shadow-gold">
-                    <award.icon className="h-5 w-5" />
-                  </div>
-                </div>
-                <div className="p-8">
-                  <div className="mb-3 font-serif text-3xl italic text-primary">0{i + 1}</div>
-                  <h4 className="font-serif text-xl text-primary-foreground">{award.title}</h4>
-                  <p className="mt-3 text-sm leading-relaxed text-primary-foreground/70">
-                    {award.description}
-                  </p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Results Gallery */}
-      <section className="relative py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Resultados reais</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
-              Galeria de <span className="text-gradient-gold italic">Resultados</span>
-            </h2>
-          </div>
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
-            {gallery.map((item) => (
-              <div key={item.title} className="group">
-                <div className="relative mb-6 aspect-[4/5] overflow-hidden rounded-2xl shadow-2xl">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    width={800}
-                    height={1000}
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 flex items-end bg-gradient-to-t from-brown/90 to-transparent p-6 opacity-0 transition-opacity group-hover:opacity-100">
-                    <p className="text-sm italic leading-relaxed text-white/90">{item.description}</p>
-                  </div>
-                </div>
-                <h4 className="font-serif text-xl text-foreground">{item.title}</h4>
-                <p className="text-xs uppercase tracking-widest text-primary">{item.subtitle}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* AI Assistant */}
-      <section id="assistente" className="relative py-32 bg-secondary/30">
+      <section id="assistente" className="relative bg-secondary py-16 md:py-24">
         <div className="mx-auto max-w-4xl px-6">
           <div className="mb-12 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Assistente virtual</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+            <span className="text-xs font-semibold text-brown-light">Assistente virtual</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
               Tire suas dúvidas com a IA
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -491,11 +426,11 @@ function HomePage() {
       </section>
 
       {/* Special services & mentorias */}
-      <section className="relative py-32">
+      <section id="mentoria" className="relative py-16 md:py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary">Atendimento exclusivo</span>
-            <h2 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+            <span className="text-xs font-semibold text-brown-light">Atendimento exclusivo</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
               Serviços Especiais &amp; Mentorias
             </h2>
             <p className="mt-4 text-muted-foreground">
@@ -504,8 +439,8 @@ function HomePage() {
           </div>
           <div className="grid gap-8 md:grid-cols-3">
             {specialServices.map((item) => (
-              <Card key={item.name} className="flex flex-col border border-border/60 bg-card/80 p-6 shadow-card transition-all hover:-translate-y-2 hover:shadow-gold">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Card key={item.name} className="flex flex-col border border-border bg-card p-6 transition-colors hover:border-brown-light">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
                   <item.icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-lg font-semibold text-card-foreground">{item.name}</h3>
@@ -513,7 +448,7 @@ function HomePage() {
                   <Clock className="h-3.5 w-3.5" /> {item.duration}
                 </p>
                 <p className="mt-3 flex-1 text-sm text-muted-foreground">{item.description}</p>
-                <Button asChild variant="outline" className="mt-6 rounded-full">
+                <Button asChild variant="outline" className="mt-6 rounded-md">
                   <a
                     href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
                       `Olá Sabrine! Gostaria de consultar sobre ${item.name}.`,
@@ -562,12 +497,12 @@ function HomePage() {
       </footer>
 
       {/* Floating actions */}
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-4">
+      <div className="fixed bottom-4 right-4 z-30 flex flex-col gap-2 md:bottom-6 md:right-6">
         <a
           href={`https://wa.me/${WHATSAPP_NUMBER}`}
           target="_blank"
           rel="noreferrer"
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[#25d366] text-white shadow-[0_0_30px_rgba(37,211,102,0.35)] transition-transform hover:scale-110 animate-float"
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-background text-foreground shadow-soft"
           aria-label="WhatsApp"
         >
           <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
@@ -576,8 +511,8 @@ function HomePage() {
         </a>
         <a
           href="#assistente"
-          className="group relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-primary/40 bg-brown text-primary shadow-2xl transition-all hover:bg-primary hover:text-primary-foreground"
-          aria-label="Assistente de agendamento"
+          className="flex h-11 w-11 items-center justify-center rounded-md border border-border bg-primary text-primary-foreground shadow-soft"
+          aria-label="Assistente de beleza"
         >
           <MessageCircle className="h-6 w-6" />
         </a>
@@ -661,14 +596,15 @@ function BookingAssistant() {
       <div className="border-t border-border/60 p-4">
         <div className="mb-3 flex flex-wrap gap-2">
           {suggestions.map((s) => (
-            <button
+            <Button
+              variant="outline"
               key={s}
               type="button"
               onClick={() => setInput(s)}
-              className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"
+              className="h-auto whitespace-normal px-3 py-2 text-left text-xs text-muted-foreground"
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
         <div className="flex gap-2">
@@ -684,7 +620,7 @@ function BookingAssistant() {
             placeholder="Escreva sua mensagem..."
             disabled={isLoading}
           />
-          <Button onClick={() => void handleSend()} disabled={isLoading || !input.trim()} className="rounded-full" size="icon">
+          <Button onClick={() => void handleSend()} disabled={isLoading || !input.trim()} aria-label="Enviar mensagem" className="rounded-md" size="icon">
             <Send className="h-4 w-4" />
           </Button>
         </div>
