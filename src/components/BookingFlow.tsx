@@ -260,7 +260,7 @@ export function BookingFlow({
               type="checkbox"
               checked={agree}
               onChange={(e) => setAgree(e.target.checked)}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
               aria-label="Li e concordo com as regras do agendamento"
             />
             <span>
