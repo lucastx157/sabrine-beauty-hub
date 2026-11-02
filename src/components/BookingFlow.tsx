@@ -254,9 +254,26 @@ export function BookingFlow({
       {/* 4. Pix */}
       {service && !showPix && (
         <div>
-          <Button size="lg" className="h-14 w-full rounded-md text-base" onClick={goToPix}>
+          <label className="mb-3 flex items-start gap-3 text-sm text-foreground">
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[hsl(var(--primary))]"
+              aria-label="Li e concordo com as regras do agendamento"
+            />
+            <span>
+              Li e concordo com as <button type="button" className="underline underline-offset-2 hover:text-primary" onClick={() => document.getElementById("regras-agendamento")?.scrollIntoView({ behavior: "smooth", block: "center" })}>regras do agendamento</button>.
+            </span>
+          </label>
+          <Button size="lg" disabled={!agree} className="h-14 w-full rounded-md text-base" onClick={goToPix}>
             Continuar para o pagamento Pix
           </Button>
+          {!agree && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Marque a caixa acima para continuar.
+            </p>
+          )}
           {missing.length > 0 && (
             <p className="mt-3 flex items-start gap-2 text-sm font-medium text-destructive">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> Falta preencher: {missing.join(", ")}.
@@ -298,17 +315,68 @@ export function BookingFlow({
       )}
 
       {/* Regras */}
-      <div className="rounded-md border border-border bg-card/60 p-5 text-sm text-muted-foreground">
-        <p className="mb-2 flex items-center gap-2 font-semibold text-foreground">
-          <ShieldCheck className="h-4 w-4 text-primary" /> Regras do agendamento
+      <div id="regras-agendamento" className="rounded-md border border-gold/60 bg-card p-6 sm:p-8">
+        <p className="flex items-center gap-2 font-serif text-xl text-foreground">
+          <ShieldCheck className="h-5 w-5 text-gold" /> Leia antes de agendar
         </p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>A vaga só é garantida com o Pix pago e o comprovante enviado.</li>
-          <li>Remarcação com no mínimo 24h de aviso — o valor pago vale para o novo horário.</li>
-          <li>Falta ou aviso com menos de 24h: o valor não é devolvido.</li>
-          <li>Tolerância de 15 minutos de atraso.</li>
-          <li>Se duas pessoas pagarem o mesmo horário, fica quem mandou o comprovante primeiro.</li>
-        </ul>
+        <div className="mt-5 space-y-5 text-sm">
+          <div className="flex gap-3">
+            <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Pagamento e confirmação</p>
+              <p className="mt-1 text-muted-foreground">
+                A vaga só é confirmada depois do Pix pago e do comprovante enviado pelo WhatsApp (37) 99859-8753.
+                Design sem henna, design com henna, coloração, Hydra Gloss e Brow Lamination: o valor total é pago antecipado no Pix.
+                Micropigmentação labial e de sobrancelhas: sinal de R$ 100 no Pix para reservar; o restante no dia do atendimento, no Pix ou no cartão.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Users className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Mesmo horário</p>
+              <p className="mt-1 text-muted-foreground">
+                Se duas pessoas pagarem o mesmo horário, a vaga fica com quem enviou o comprovante primeiro.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Remarcação</p>
+              <p className="mt-1 text-muted-foreground">
+                Pode remarcar avisando com no mínimo 24 horas de antecedência; o valor pago vale para o novo horário.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Faltas e avisos em cima da hora</p>
+              <p className="mt-1 text-muted-foreground">
+                Em caso de falta ou aviso com menos de 24 horas, o valor pago não é devolvido.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Timer className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Atrasos</p>
+              <p className="mt-1 text-muted-foreground">
+                Tolerância de 15 minutos. Chegue com alguns minutos de antecedência.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+            <div>
+              <p className="font-semibold text-foreground">Agenda</p>
+              <p className="mt-1 text-muted-foreground">
+                Os horários da semana seguinte são liberados no domingo de manhã. Fiquem ligadas!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="border-t border-gold pt-6 text-center text-foreground">
