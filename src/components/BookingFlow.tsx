@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Copy, AlertCircle, ShieldCheck } from "lucide-react";
+import { Check, Copy, AlertCircle, ShieldCheck, CreditCard, Users, CalendarClock, Timer, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ export function BookingFlow({
   const [otherPerson, setOtherPerson] = useState(false);
   const [attendee, setAttendee] = useState("");
   const [showPix, setShowPix] = useState(false);
+  const [agree, setAgree] = useState(false);
   const [missing, setMissing] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
