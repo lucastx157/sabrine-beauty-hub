@@ -19,6 +19,8 @@ import {
   getAppConfig,
   updateAppConfig,
   updateBookingStatus,
+  getReminderBookings,
+  markReminderSent,
 } from "@/lib/admin.functions";
 import { formatDisplayDate, formatCurrencyCents, formatPhone } from "@/lib/dates";
 import { addDays, format, startOfWeek } from "date-fns";
@@ -33,6 +35,14 @@ export const Route = createFileRoute("/admin")({
       { property: "og:description", content: "Gestão de disponibilidade e agendamentos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "theme-color", content: "#171412" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Sabrine Admin" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+    ],
+    links: [
+      { rel: "manifest", href: "/admin.webmanifest" },
+      { rel: "apple-touch-icon", href: "/admin-icon-192.png" },
     ],
   }),
   component: AdminPage,
@@ -149,11 +159,13 @@ function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="week" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 rounded-full bg-secondary p-1">
+        <InstallHint />
+          <TabsList className="grid w-full grid-cols-4 rounded-full bg-secondary p-1 text-xs sm:text-sm">
             <TabsTrigger value="week" className="rounded-full">Semana</TabsTrigger>
             <TabsTrigger value="bookings" className="rounded-full">
               Pedidos{newCount > 0 ? ` (${newCount})` : ""}
             </TabsTrigger>
+            <TabsTrigger value="reminders" className="rounded-full">Lembretes</TabsTrigger>
             <TabsTrigger value="config" className="rounded-full">Ajustes</TabsTrigger>
           </TabsList>
 
@@ -162,6 +174,9 @@ function AdminDashboard() {
           </TabsContent>
           <TabsContent value="bookings">
             <BookingsPanel bookings={bookings} onChanged={() => void getAdminBookings({ data: undefined }).then(setBookings)} />
+          </TabsContent>
+          <TabsContent value="reminders">
+            <RemindersPanel />
           </TabsContent>
           <TabsContent value="config">
             <ConfigPanel config={config} onSaved={load} />
@@ -356,6 +371,14 @@ function BookingsPanel({
                     </a>
                   )}
                   {b.amount_cents != null && <p className="text-xs text-muted-foreground">Pix: {formatCurrencyCents(b.amount_cents)}</p>}
+                  {b.payment_status && (
+                    <p className="text-xs">
+                      Pagamento online:{" "}
+                      <span className={`font-semibold ${b.payment_status === "approved" ? "text-success" : b.payment_status === "rejected" ? "text-destructive" : "text-gold"}`}>
+                        {b.payment_status === "approved" ? "Aprovado" : b.payment_status === "rejected" ? "Recusado" : "Aguardando"}
+                      </span>
+                    </p>
+                  )}
                   {b.notes && <p className="text-xs text-muted-foreground">Obs.: {b.notes}</p>}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {b.proofUrl && (
@@ -459,5 +482,112 @@ function ConfigPanel({
         </Button>
       </form>
     </Card>
+  );
+}
+
+function InstallHint() {
+  const [open, setOpen] = useState(false);
+  return (
+    <Card className="mb-4 p-4 shadow-card">
+      <button type="button" className="flex w-full items-center justify-between text-left text-sm font-semibold text-foreground" onClick={() => setOpen(!open)}>
+        📲 Instalar no celular
+        <span className="text-xs text-muted-foreground">{open ? "fechar" : "ver como"}</span>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+          <p><strong className="text-foreground">iPhone (Safari):</strong> toque em Compartilhar (quadrado com seta) → "Adicionar à Tela de Início" → Adicionar.</p>
+          <p><strong className="text-foreground">Android (Chrome):</strong> toque nos 3 pontinhos → "Instalar app" ou "Adicionar à tela inicial".</p>
+          <p>O ícone "Sabrine Admin" aparece na tela do celular e abre direto no painel.</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+type ReminderData = Awaited<ReturnType<typeof getReminderBookings>>;
+type ReminderBooking = ReminderData["bookings"][number];
+
+function reminderUrl(b: ReminderBooking, isToday: boolean) {
+  const [, m, d] = b.booking_date.split("-");
+  const when = isToday ? `hoje (${d}/${m})` : `amanhã (${d}/${m})`;
+  const msg = `Olá, ${b.client_name}! Passando para lembrar do seu horário na Sabrine Beauty ${when} às ${b.start_time.slice(0, 5)}. Qualquer imprevisto, me avise com antecedência. Até lá!`;
+  return `https://wa.me/55${(b.client_phone ?? "").replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`;
+}
+
+function RemindersPanel() {
+  const [data, setData] = useState<ReminderData | null>(null);
+  const [queue, setQueue] = useState<ReminderBooking[] | null>(null);
+  const load = () => getReminderBookings({ data: undefined }).then(setData).catch(() => toast.error("Erro ao carregar lembretes."));
+  useEffect(() => { void load(); }, []);
+
+  const remind = async (b: ReminderBooking) => {
+    if (!data) return;
+    window.open(reminderUrl(b, b.booking_date === data.today), "_blank");
+    try {
+      await markReminderSent({ data: { id: b.id } });
+      await load();
+    } catch {
+      toast.error("Não consegui marcar como enviado.");
+    }
+  };
+
+  if (!data) return <p className="p-6 text-center text-muted-foreground">Carregando…</p>;
+  const tomorrowList = data.bookings.filter((b) => b.booking_date === data.tomorrow);
+
+  const Section = ({ title, list }: { title: string; list: ReminderBooking[] }) => (
+    <Card className="p-4 shadow-card">
+      <h3 className="mb-3 font-semibold text-foreground">{title}</h3>
+      {list.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum agendamento.</p>
+      ) : (
+        <div className="space-y-3">
+          {list.map((b) => (
+            <div key={b.id} className="flex flex-col gap-2 rounded-xl border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm">
+                <p className="font-medium text-foreground">{b.client_name}</p>
+                <p className="text-muted-foreground">{formatPhone(b.client_phone ?? "")}</p>
+                <p className="text-muted-foreground">
+                  {formatDisplayDate(b.booking_date)} às {b.start_time.slice(0, 5)} · {(b.services as { name: string } | null)?.name ?? "Serviço"}
+                </p>
+                {b.reminder_sent_at && <p className="text-xs font-semibold text-success">✓ Lembrete enviado</p>}
+              </div>
+              <Button size="sm" variant={b.reminder_sent_at ? "outline" : "default"} onClick={() => void remind(b)}>
+                Lembrar no WhatsApp
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+
+  const next = queue?.[0];
+  return (
+    <div className="space-y-4">
+      {tomorrowList.length > 0 && !queue && (
+        <Button className="w-full" onClick={() => setQueue(tomorrowList.filter((b) => !b.reminder_sent_at).length ? tomorrowList.filter((b) => !b.reminder_sent_at) : tomorrowList)}>
+          Lembrar todos de amanhã
+        </Button>
+      )}
+      {queue && (
+        <Card className="space-y-3 border-gold/60 p-4">
+          {next ? (
+            <>
+              <p className="text-sm text-foreground">
+                Faltam {queue.length}. Próxima: <strong>{next.client_name}</strong> às {next.start_time.slice(0, 5)}
+              </p>
+              <Button className="w-full" onClick={() => { void remind(next); setQueue(queue.slice(1)); }}>
+                Abrir WhatsApp de {next.client_name}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm font-semibold text-success">Todos os lembretes de amanhã foram abertos.</p>
+          )}
+          <Button variant="outline" className="w-full" onClick={() => setQueue(null)}>Fechar</Button>
+        </Card>
+      )}
+      <Section title={`Amanhã (${formatDisplayDate(data.tomorrow)})`} list={tomorrowList} />
+      <Section title={`Hoje (${formatDisplayDate(data.today)})`} list={data.bookings.filter((b) => b.booking_date === data.today)} />
+    </div>
   );
 }

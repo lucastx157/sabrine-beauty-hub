@@ -292,3 +292,37 @@ export const deleteDateSlot = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---- Lembretes ----
+
+export const getReminderBookings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .handler(async () => {
+    const supabaseAdmin = await getAdminClient();
+    const fmt = (d: Date) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
+    const today = fmt(new Date());
+    const tomorrow = fmt(new Date(Date.now() + 24 * 3600_000));
+    const { data, error } = await supabaseAdmin
+      .from("bookings")
+      .select("id, client_name, client_phone, booking_date, start_time, reminder_sent_at, status, services(name)")
+      .in("booking_date", [today, tomorrow])
+      .in("status", ["confirmed", "rescheduled", "requested"])
+      .order("booking_date")
+      .order("start_time");
+    if (error) throw new Error(error.message);
+    return { today, tomorrow, bookings: data ?? [] };
+  });
+
+export const markReminderSent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, adminMiddleware])
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const supabaseAdmin = await getAdminClient();
+    const { error } = await supabaseAdmin
+      .from("bookings")
+      .update({ reminder_sent_at: new Date().toISOString() })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

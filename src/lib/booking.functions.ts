@@ -90,7 +90,7 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
 
     const { data: bookings, error: bookError } = await supabaseAdmin
       .from("bookings")
-      .select("booking_date, start_time, end_time, status")
+      .select("booking_date, start_time, end_time, status, reserved_until")
       .gte("booking_date", formatBrazilDate(effectiveFrom))
       .lte("booking_date", formatBrazilDate(to))
       .in("status", ["confirmed", "rescheduled", "pending_payment"]);
@@ -104,7 +104,11 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
       .lte("available_date", formatBrazilDate(to));
     if (overrideError) throw new Error(overrideError.message);
 
-    const booked = (bookings ?? []).map((b) => ({
+    const nowMs = Date.now();
+    const booked = (bookings ?? [])
+      // Reserva aguardando Mercado Pago expira em 20 min e libera o horário.
+      .filter((b) => !(b.status === "pending_payment" && b.reserved_until && new Date(b.reserved_until).getTime() < nowMs))
+      .map((b) => ({
       date: b.booking_date,
       start: timeStrToMinutes(b.start_time),
       end: timeStrToMinutes(b.end_time),

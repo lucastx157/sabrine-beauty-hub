@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getAvailableSlots, requestBooking, listServices } from "@/lib/booking.functions";
 import { formatCurrencyCents } from "@/lib/dates";
+import { createCheckout } from "@/lib/payment.functions";
 import { toast } from "sonner";
 
 type Service = Awaited<ReturnType<typeof listServices>>[number];
@@ -97,6 +98,27 @@ export function BookingFlow({
     }
   };
 
+  const payOnline = async () => {
+    if (!service || !date || !time) return;
+    setSending(true);
+    try {
+      const res = await createCheckout({
+        data: {
+          serviceId: service.id,
+          date,
+          time,
+          clientName: name.trim(),
+          clientPhone: phoneDigits,
+          ...(otherPerson ? { attendeeName: attendee.trim() } : {}),
+        },
+      });
+      window.location.href = res.url;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o pagamento.");
+      setSending(false);
+    }
+  };
+
   const sendProof = async () => {
     if (!service || !date || !time) return;
     // Abre a janela já no clique para o celular não bloquear o WhatsApp.
@@ -174,7 +196,7 @@ export function BookingFlow({
             >
               <span className="block font-semibold text-foreground">{s.name}</span>
               <span className="text-primary">
-                {s.deposit_cents ? `Sinal ${formatCurrencyCents(s.deposit_cents)} no Pix` : formatCurrencyCents(s.price_min ?? 0)}
+                {s.deposit_cents ? `Sinal ${formatCurrencyCents(s.deposit_cents)}` : formatCurrencyCents(s.price_min ?? 0)}
               </span>
             </Button>
           ))}
@@ -268,7 +290,7 @@ export function BookingFlow({
             </span>
           </label>
           <Button size="lg" disabled={!agree} className="h-14 w-full rounded-md text-base" onClick={goToPix}>
-            Continuar para o pagamento Pix
+            Continuar para o pagamento
           </Button>
           {!agree && (
             <p className="mt-3 text-xs text-muted-foreground">
@@ -285,7 +307,7 @@ export function BookingFlow({
 
       {service && showPix && date && time && (
         <div className="space-y-4 rounded-md border border-primary/40 bg-primary/5 p-5">
-          <h3 className="font-serif text-xl text-foreground">4. Pagamento via Pix</h3>
+          <h3 className="font-serif text-xl text-foreground">4. Pagamento</h3>
           <p className="text-sm text-muted-foreground">
             {service.name} · {dateParts(date).label} às {time}
           </p>
@@ -296,18 +318,11 @@ export function BookingFlow({
               <p className="text-xs text-muted-foreground">Sinal para reservar. O restante é pago no dia (Pix ou cartão).</p>
             )}
           </div>
-          <div className="rounded-md border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Chave Pix (celular) · Recebedora: Sabrine</p>
-            <p className="font-mono text-lg font-semibold text-foreground">{PIX_KEY}</p>
-            <Button variant="outline" className="mt-3 w-full rounded-md" onClick={() => void copyPix()}>
-              <Copy className="mr-2 h-4 w-4" /> Copiar chave Pix
-            </Button>
-          </div>
-          <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void sendProof()}>
-            {sending ? "Enviando..." : "Já paguei, enviar comprovante"}
+          <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void payOnline()}>
+            <CreditCard className="mr-2 h-5 w-5" /> {sending ? "Abrindo pagamento..." : "Pagar com cartão ou Pix"}
           </Button>
-          <p className="text-center text-sm font-semibold text-foreground">
-            Seu horário só está marcado depois do ok da Sabrine (até 8 horas).
+          <p className="text-center text-xs text-muted-foreground">
+            Pagamento seguro pelo Mercado Pago. Seu horário fica reservado por 20 minutos e é confirmado automaticamente quando o pagamento for aprovado.
           </p>
           <Button variant="outline" type="button" className="h-auto w-full border-0 bg-transparent text-xs text-muted-foreground underline" onClick={() => setShowPix(false)}>
             Voltar e alterar dados
@@ -326,9 +341,9 @@ export function BookingFlow({
             <div>
               <p className="font-semibold text-foreground">Pagamento e confirmação</p>
               <p className="mt-1 text-muted-foreground">
-                A vaga só é confirmada depois do Pix pago e do comprovante enviado pelo WhatsApp (37) 99859-8753.
-                Design sem henna, design com henna, coloração, Hydra Gloss e Brow Lamination: o valor total é pago antecipado no Pix.
-                Micropigmentação labial e de sobrancelhas: sinal de R$ 100 no Pix para reservar; o restante no dia do atendimento, no Pix ou no cartão.
+                A vaga só é confirmada quando o Mercado Pago aprova o pagamento (cartão ou Pix) feito pelo site. Comprovante enviado por mensagem não confirma horário.
+                Design sem henna, design com henna, coloração, Hydra Gloss e Brow Lamination: o valor total é pago antecipado.
+                Micropigmentação labial e de sobrancelhas: sinal de R$ 100 para reservar; o restante no dia do atendimento, no Pix ou no cartão.
               </p>
             </div>
           </div>
@@ -337,7 +352,7 @@ export function BookingFlow({
             <div>
               <p className="font-semibold text-foreground">Mesmo horário</p>
               <p className="mt-1 text-muted-foreground">
-                Se duas pessoas pagarem o mesmo horário, a vaga fica com quem enviou o comprovante primeiro.
+                Se duas pessoas pagarem o mesmo horário, a vaga fica com quem teve o pagamento aprovado primeiro.
               </p>
             </div>
           </div>

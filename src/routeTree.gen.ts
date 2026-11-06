@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
+import { Route as PagamentoFalhaRouteImport } from './routes/pagamento.falha'
+import { Route as PagamentoSucessoRouteImport } from './routes/pagamento.sucesso'
+import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +32,22 @@ const AdminSetupRoute = AdminSetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => AdminRoute,
 } as any)
+const PagamentoFalhaRoute = PagamentoFalhaRouteImport.update({
+  id: '/pagamento/falha',
+  path: '/pagamento/falha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PagamentoSucessoRoute = PagamentoSucessoRouteImport.update({
+  id: '/pagamento/sucesso',
+  path: '/pagamento/sucesso',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMercadopagoWebhookRoute =
+  ApiPublicMercadopagoWebhookRouteImport.update({
+    id: '/api/public/mercadopago/webhook',
+    path: '/api/public/mercadopago/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWhatsappWebhookRoute =
   ApiPublicWhatsappWebhookRouteImport.update({
     id: '/api/public/whatsapp/webhook',
@@ -40,12 +59,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/setup': typeof AdminSetupRoute
+  '/pagamento/falha': typeof PagamentoFalhaRoute
+  '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/setup': typeof AdminSetupRoute
+  '/pagamento/falha': typeof PagamentoFalhaRoute
+  '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRoutesById {
@@ -53,24 +78,47 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/admin/setup': typeof AdminSetupRoute
+  '/pagamento/falha': typeof PagamentoFalhaRoute
+  '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/admin/setup' | '/api/public/whatsapp/webhook'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/admin/setup'
+    | '/pagamento/falha'
+    | '/pagamento/sucesso'
+    | '/api/public/mercadopago/webhook'
+    | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/admin/setup' | '/api/public/whatsapp/webhook'
+  to:
+    | '/'
+    | '/admin'
+    | '/admin/setup'
+    | '/pagamento/falha'
+    | '/pagamento/sucesso'
+    | '/api/public/mercadopago/webhook'
+    | '/api/public/whatsapp/webhook'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/admin/setup'
+    | '/pagamento/falha'
+    | '/pagamento/sucesso'
+    | '/api/public/mercadopago/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  PagamentoFalhaRoute: typeof PagamentoFalhaRoute
+  PagamentoSucessoRoute: typeof PagamentoSucessoRoute
+  ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
 
@@ -97,6 +145,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSetupRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/pagamento/falha': {
+      id: '/pagamento/falha'
+      path: '/pagamento/falha'
+      fullPath: '/pagamento/falha'
+      preLoaderRoute: typeof PagamentoFalhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pagamento/sucesso': {
+      id: '/pagamento/sucesso'
+      path: '/pagamento/sucesso'
+      fullPath: '/pagamento/sucesso'
+      preLoaderRoute: typeof PagamentoSucessoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mercadopago/webhook': {
+      id: '/api/public/mercadopago/webhook'
+      path: '/api/public/mercadopago/webhook'
+      fullPath: '/api/public/mercadopago/webhook'
+      preLoaderRoute: typeof ApiPublicMercadopagoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/whatsapp/webhook': {
       id: '/api/public/whatsapp/webhook'
       path: '/api/public/whatsapp/webhook'
@@ -120,6 +189,9 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  PagamentoFalhaRoute: PagamentoFalhaRoute,
+  PagamentoSucessoRoute: PagamentoSucessoRoute,
+  ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
 export const routeTree = rootRouteImport

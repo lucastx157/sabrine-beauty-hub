@@ -100,9 +100,14 @@ export type Database = {
           created_at: string | null
           end_time: string
           id: string
+          mp_payment_id: string | null
+          mp_preference_id: string | null
           notes: string | null
           original_booking_id: string | null
           payment_proof_path: string | null
+          payment_status: string | null
+          reminder_sent_at: string | null
+          reserved_until: string | null
           service_id: string | null
           start_time: string
           status: string
@@ -118,9 +123,14 @@ export type Database = {
           created_at?: string | null
           end_time: string
           id?: string
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           original_booking_id?: string | null
           payment_proof_path?: string | null
+          payment_status?: string | null
+          reminder_sent_at?: string | null
+          reserved_until?: string | null
           service_id?: string | null
           start_time: string
           status?: string
@@ -136,9 +146,14 @@ export type Database = {
           created_at?: string | null
           end_time?: string
           id?: string
+          mp_payment_id?: string | null
+          mp_preference_id?: string | null
           notes?: string | null
           original_booking_id?: string | null
           payment_proof_path?: string | null
+          payment_status?: string | null
+          reminder_sent_at?: string | null
+          reserved_until?: string | null
           service_id?: string | null
           start_time?: string
           status?: string
