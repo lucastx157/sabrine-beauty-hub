@@ -8,21 +8,12 @@ import {
   isAtLeastHoursBefore,
   formatBrazilDate,
 } from "./dates";
+import { ensureMondaySlots } from "./monday-slots.server";
 import { sendWhatsAppNotification, bookingNotificationMessage } from "./whatsapp.server";
 
 const getAdminClient = async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
-};
-
-const getAdvanceDays = async () => {
-  const supabaseAdmin = await getAdminClient();
-  const { data } = await supabaseAdmin
-    .from("app_config")
-    .select("value")
-    .eq("key", "advance_booking_days")
-    .single();
-  return parseInt(data?.value ?? "7", 10) || 7;
 };
 
 const getNotificationNumber = async () => {
@@ -64,29 +55,25 @@ function minutesToTimeStr(minutes: number) {
   return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
-/** Horários fixos por dia da semana (0=Dom ... 6=Sáb). Só estes aparecem. */
-const WEEKLY_FIXED_SLOTS: Record<number, string[]> = {
-  2: ["09:00", "10:30", "14:30", "16:30", "17:00"], // Terça
-  3: ["07:30", "08:00", "11:00", "12:00"], // Quarta
-  4: ["07:30", "09:00", "11:00"], // Quinta
-  5: ["08:00", "08:30", "09:30", "11:30", "12:00", "13:00"], // Sexta
-};
-
 export const getAvailableSlots = createServerFn({ method: "POST" })
   .inputValidator((data) => slotSchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
-    const advanceDays = await getAdvanceDays();
 
     const now = nowInBrazil();
-    const earliest = addDays(now, advanceDays);
     const today = startOfDay(now);
     const from = data.from ? parseISO(data.from) : today;
     const effectiveFrom = isBefore(from, today) ? today : from;
     const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 41);
 
-    // Horários semanais fixos vêm de WEEKLY_FIXED_SLOTS (não mais da tabela availability).
-    // Overrides por data (availability_overrides) continuam valendo e têm prioridade.
+    // A agenda vem só de availability_overrides (horários por data).
+    // As segundas recebem automaticamente a grade fixa de MONDAY_SLOTS.
+    await ensureMondaySlots(
+      supabaseAdmin,
+      formatBrazilDate(effectiveFrom),
+      formatBrazilDate(to),
+      formatBrazilDate(today),
+    );
 
     const { data: bookings, error: bookError } = await supabaseAdmin
       .from("bookings")
@@ -123,7 +110,6 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
     }[] = [];
 
     for (let d = new Date(effectiveFrom); !isBefore(to, d); d = addDays(d, 1)) {
-      const dayOfWeek = d.getDay();
       const dateStr = formatBrazilDate(d);
       const daySlots = new Set<string>();
       const occupiedSlots = new Set<string>();
@@ -154,28 +140,8 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
             daySlots.add(minutesToTimeStr(t));
           }
         }
-      } else {
-        // Só datas cadastradas na agenda aparecem; sem grade semanal automática.
-        const fixedTimes: string[] = [];
-        void WEEKLY_FIXED_SLOTS[dayOfWeek];
-        for (const timeStr of fixedTimes) {
-          const t = timeStrToMinutes(timeStr);
-          const slotStart = set(d, {
-            hours: Math.floor(t / 60),
-            minutes: t % 60,
-            seconds: 0,
-            milliseconds: 0,
-          });
-          if (isBefore(slotStart, earliest)) continue;
-
-          const isBooked = booked.some(
-            (b) => b.date === dateStr && t >= b.start && t < b.end,
-          );
-          if (!isBooked) {
-            daySlots.add(timeStr);
-          }
-        }
       }
+      // Datas sem horários cadastrados não aparecem.
 
       const entries = [
         ...Array.from(daySlots).map((time) => ({ time, occupied: false })),

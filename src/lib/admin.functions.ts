@@ -213,6 +213,9 @@ export const getDateSlots = createServerFn({ method: "POST" })
   .inputValidator((data) => rangeSchema.parse(data))
   .handler(async ({ data }) => {
     const supabaseAdmin = await getAdminClient();
+    const { ensureMondaySlots } = await import("./monday-slots.server");
+    const { nowInBrazil, formatBrazilDate } = await import("./dates");
+    await ensureMondaySlots(supabaseAdmin, data.from, data.to, formatBrazilDate(nowInBrazil()));
     const { data: rows, error } = await supabaseAdmin
       .from("availability_overrides")
       .select("id, available_date, start_time, is_blocked")
