@@ -89,6 +89,12 @@ function priceRange(service: Service) {
 const PROCEDURE_PHOTOS: Record<string, string> = {
   "micropigmentação de sobrancelhas": "/images/procedure-microblading.jpg",
   "micropigmentação labial": "/images/procedure-labial.jpg",
+  "design sem henna":
+    "https://images.unsplash.com/photo-1594715271011-63c18acf1489?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
+  "design com henna":
+    "https://images.unsplash.com/photo-1698335107935-e2c8287c4947?w=200&h=200&fit=crop&q=80&auto=format",
+  "brow lamination":
+    "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=200&h=200&fit=crop&q=80&auto=format",
 };
 
 function procedurePhoto(name: string) {
