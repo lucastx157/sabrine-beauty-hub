@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { checkPayment } from "@/lib/payment.functions";
 
@@ -48,7 +48,20 @@ function SuccessPage() {
               ? "Só um instante."
               : "Assim que o Mercado Pago aprovar, seu horário é confirmado automaticamente. Se não for aprovado em 20 minutos, o horário volta a ficar livre."}
         </p>
-        <Button asChild className="mt-6"><Link to="/">Voltar ao site</Link></Button>
+        {approved && (
+          <Link
+            to="/cartao"
+            className="mt-6 flex items-center gap-3 rounded-2xl border border-gold/60 bg-primary p-4 text-left text-primary-foreground"
+          >
+            <Star className="h-6 w-6 shrink-0 text-gold" />
+            <span className="flex-1 text-sm">
+              <b className="block font-serif text-base">Você ganhou pontos!</b>
+              Veja seus pontos e o seu Cartão Brow Beauty.
+            </span>
+            <span className="text-gold">→</span>
+          </Link>
+        )}
+        <Button asChild variant={approved ? "outline" : "default"} className="mt-4"><Link to="/">Voltar ao site</Link></Button>
       </div>
     </main>
   );

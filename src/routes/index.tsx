@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -191,6 +191,7 @@ function HomePage() {
             <a href="#sobre" className="hover:text-foreground">A Sabrine</a>
             <a href="#resultados" className="hover:text-foreground">Resultados</a>
             <a href="#mentoria" className="hover:text-foreground">Mentoria</a>
+            <Link to="/cartao" className="text-gold-dark hover:text-foreground">Cartão Brow Beauty</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Button onClick={() => { setMenuOpen(false); goToBooking(); }} className="h-10 px-4 text-xs md:text-sm">Agendar horário <ArrowRight /></Button>
@@ -199,6 +200,7 @@ function HomePage() {
         </div>
         {menuOpen && <nav id="mobile-menu" aria-label="Navegação no celular" className="grid gap-1 border-t border-border px-5 py-3 lg:hidden">
           {[["#servicos", "Procedimentos"], ["#sobre", "A Sabrine"], ["#resultados", "Resultados"], ["#mentoria", "Mentoria"], ["#assistente", "Assistente"]].map(([href, label]) => <Button key={href} asChild variant="ghost" className="justify-start" onClick={() => setMenuOpen(false)}><a href={href}>{label}</a></Button>)}
+          <Button asChild variant="ghost" className="justify-start text-gold-dark" onClick={() => setMenuOpen(false)}><Link to="/cartao">Cartão Brow Beauty</Link></Button>
           <Button asChild variant="ghost" className="justify-start"><a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">Contato <Phone /></a></Button>
         </nav>}
       </header>
