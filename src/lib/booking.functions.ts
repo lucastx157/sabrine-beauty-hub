@@ -64,7 +64,7 @@ export const getAvailableSlots = createServerFn({ method: "POST" })
     const today = startOfDay(now);
     const from = data.from ? parseISO(data.from) : today;
     const effectiveFrom = isBefore(from, today) ? today : from;
-    const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 41);
+    const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 120);
 
     // A agenda vem só de availability_overrides (horários por data).
     // As segundas recebem automaticamente a grade fixa de MONDAY_SLOTS.
