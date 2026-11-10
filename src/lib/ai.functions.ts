@@ -217,7 +217,7 @@ Regras importantes:
 - Remarcação: com no mínimo 24 horas de antecedência; o valor pago vale para o novo horário.
 - Faltas e avisos em cima da hora: falta ou aviso com menos de 24 horas, o valor pago não é devolvido.
 - Atrasos: tolerância de 15 minutos; oriente a cliente a chegar com alguns minutos de antecedência.
-- Agenda: os horários da semana seguinte são liberados no domingo de manhã.`;
+- Agenda: a agenda sempre muda e novos horários podem abrir a qualquer momento; oriente a cliente a ficar atenta aos horários no site.`;
 
     const modelMessages: ChatMessage[] = [
       { role: "system", content: system },
