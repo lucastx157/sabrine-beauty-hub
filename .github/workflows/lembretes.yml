@@ -1,0 +1,19 @@
+name: Lembretes do dia seguinte
+
+on:
+  schedule:
+    # 21:07 UTC = 18:07 em Brasília
+    - cron: "7 21 * * *"
+  workflow_dispatch:
+
+jobs:
+  lembrar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar lembretes de amanhã
+        env:
+          REMINDERS_TOKEN: ${{ secrets.REMINDERS_TOKEN }}
+        run: |
+          curl -sS --fail-with-body -X POST \
+            -H "Authorization: Bearer ${REMINDERS_TOKEN}" \
+            https://sabrine-beauty-hub.lovable.app/api/public/lembretes
