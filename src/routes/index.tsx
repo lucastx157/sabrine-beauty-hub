@@ -93,6 +93,10 @@ const PROCEDURE_PHOTOS: Record<string, string> = {
     "https://images.unsplash.com/photo-1594715271011-63c18acf1489?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
   "design com henna":
     "https://images.unsplash.com/photo-1698335107935-e2c8287c4947?w=200&h=200&fit=crop&q=80&auto=format",
+  "coloração":
+    "https://images.unsplash.com/photo-1651839633408-3fccd671b832?w=200&h=200&fit=crop&q=80&auto=format",
+  "hydra gloss":
+    "https://images.unsplash.com/photo-1643630661247-2474f10e4f70?w=200&h=200&fit=crop&q=80&auto=format",
   "brow lamination":
     "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=200&h=200&fit=crop&q=80&auto=format",
 };
