@@ -90,3 +90,8 @@ export const checkPayment = createServerFn({ method: "POST" })
     const status = await applyPayment(payment);
     return { status: (status ?? "unknown") as "approved" | "pending" | "rejected" | "unknown" };
   });
+
+/** Diz ao site se o pagamento com cartão pelo Mercado Pago já está ativo (secret cadastrado). */
+export const getPaymentOptions = createServerFn({ method: "GET" }).handler(async () => {
+  return { cardOnline: Boolean(process.env["MERCADOPAGO_ACCESS_TOKEN"]) };
+});

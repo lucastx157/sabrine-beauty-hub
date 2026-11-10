@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getAvailableSlots, requestBooking, listServices } from "@/lib/booking.functions";
 import { formatCurrencyCents } from "@/lib/dates";
-import { createCheckout } from "@/lib/payment.functions";
+import { createCheckout, getPaymentOptions } from "@/lib/payment.functions";
+import { PIX_KEY, pixCopiaECola, pixQrImageUrl } from "@/lib/pix";
 import { pointsForCents } from "@/lib/loyalty.functions";
 import { loadClient, saveClient } from "@/lib/client-storage";
 import { Link } from "@tanstack/react-router";
@@ -14,8 +15,9 @@ import { toast } from "sonner";
 
 type Service = Awaited<ReturnType<typeof listServices>>[number];
 
-export const PIX_KEY = "37998598753";
+export { PIX_KEY };
 const WHATSAPP_NUMBER = "5537998598753";
+const CARD_BRANDS = ["Visa", "Mastercard", "Elo", "Hipercard", "American Express", "Hiper"];
 const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
 
@@ -50,6 +52,13 @@ export function BookingFlow({
   const [missing, setMissing] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+
+  const { data: paymentOptions } = useQuery({
+    queryKey: ["payment-options"],
+    queryFn: () => getPaymentOptions(),
+    staleTime: 5 * 60_000,
+  });
+  const cardOnline = paymentOptions?.cardOnline ?? false;
 
   const { data: slots = [], isLoading } = useQuery({
     queryKey: ["slots", selectedServiceId],
@@ -128,6 +137,32 @@ export function BookingFlow({
     } catch {
       toast.message(`Chave Pix: ${PIX_KEY}`);
     }
+  };
+
+  const pixCode = service ? pixCopiaECola(dueNow(service)) : "";
+
+  const copyPixCode = async () => {
+    try {
+      await navigator.clipboard.writeText(pixCode);
+      toast.success("Código Pix copia e cola copiado!");
+    } catch {
+      toast.message("Selecione e copie o código abaixo do QR Code.");
+    }
+  };
+
+  const askCardLink = () => {
+    if (!service || !date || !time) return;
+    const lines = [
+      "Olá Sabrine! Quero pagar meu agendamento com cartão:",
+      `• Procedimento: ${service.name}`,
+      `• Dia: ${dateParts(date).label}`,
+      `• Horário: ${time}`,
+      `• Nome: ${name.trim()}`,
+      `• Valor: ${formatCurrencyCents(dueNow(service))}`,
+      "",
+      "Pode me enviar o link de pagamento?",
+    ];
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   };
 
   const payOnline = async () => {
@@ -393,12 +428,70 @@ export function BookingFlow({
               Você ganha <b className="text-gold">{pointsForCents(dueNow(service))} pontos</b> no Clube Sabrine Beauty quando o pagamento for aprovado.
             </p>
           </div>
-          <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void payOnline()}>
-            <CreditCard className="mr-2 h-5 w-5" /> {sending ? "Abrindo pagamento..." : "Pagar com cartão ou Pix"}
-          </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Pagamento seguro pelo Mercado Pago. Seu horário fica reservado por 20 minutos e é confirmado automaticamente quando o pagamento for aprovado.
-          </p>
+          {/* Pix */}
+          <div className="space-y-3 rounded-md border border-border bg-card p-4">
+            <p className="font-semibold text-foreground">Pagar com Pix</p>
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+              <img
+                src={pixQrImageUrl(pixCode)}
+                alt="QR Code Pix com o valor do agendamento"
+                width={180}
+                height={180}
+                className="h-44 w-44 shrink-0 rounded-md bg-white p-1"
+              />
+              <div className="w-full min-w-0 space-y-2 text-sm">
+                <p className="text-muted-foreground">Chave Pix (celular)</p>
+                <p className="font-serif text-2xl text-foreground">(37) 99859-8753</p>
+                <p className="text-xs text-muted-foreground">Recebedora: Sabrine</p>
+                <Button type="button" variant="outline" className="w-full rounded-md" onClick={() => void copyPix()}>
+                  <Copy className="mr-2 h-4 w-4" /> Copiar chave Pix
+                </Button>
+                <Button type="button" variant="outline" className="w-full rounded-md" onClick={() => void copyPixCode()}>
+                  <Copy className="mr-2 h-4 w-4" /> Copiar Pix copia e cola
+                </Button>
+              </div>
+            </div>
+            <p className="break-all rounded-md bg-muted p-2 font-mono text-[11px] text-muted-foreground" aria-label="Código Pix copia e cola">
+              {pixCode}
+            </p>
+            <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void sendProof()}>
+              <Check className="mr-2 h-5 w-5" /> {sending ? "Enviando..." : "Já paguei, enviar comprovante"}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              O comprovante vai pelo WhatsApp da Sabrine. Seu horário é confirmado depois que ela conferir o Pix na conta.
+            </p>
+          </div>
+
+          {/* Cartão */}
+          <div className="space-y-3 rounded-md border border-border bg-card p-4">
+            <p className="font-semibold text-foreground">Pagar com cartão</p>
+            <div className="flex flex-wrap gap-2">
+              {CARD_BRANDS.map((b) => (
+                <span key={b} className="rounded border border-border px-2 py-1 text-xs font-medium text-foreground">
+                  {b}
+                </span>
+              ))}
+            </div>
+            {cardOnline ? (
+              <>
+                <Button size="lg" variant="outline" disabled={sending} className="h-12 w-full rounded-md" onClick={() => void payOnline()}>
+                  <CreditCard className="mr-2 h-5 w-5" /> {sending ? "Abrindo pagamento..." : "Pagar com cartão"}
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Pagamento seguro pelo Mercado Pago. O horário fica reservado por 20 minutos e é confirmado automaticamente quando o pagamento for aprovado.
+                </p>
+              </>
+            ) : (
+              <>
+                <Button size="lg" variant="outline" className="h-12 w-full rounded-md" onClick={askCardLink}>
+                  <CreditCard className="mr-2 h-5 w-5" /> Pagar com cartão
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Fale com a Sabrine no WhatsApp para receber o link de pagamento no cartão.
+                </p>
+              </>
+            )}
+          </div>
           <Button variant="outline" type="button" className="h-auto w-full border-0 bg-transparent text-xs text-muted-foreground underline" onClick={() => setShowPix(false)}>
             Voltar e alterar dados
           </Button>
@@ -416,7 +509,7 @@ export function BookingFlow({
             <div>
               <p className="font-semibold text-foreground">Pagamento e confirmação</p>
               <p className="mt-1 text-muted-foreground">
-                A vaga só é confirmada quando o Mercado Pago aprova o pagamento (cartão ou Pix) feito pelo site. Comprovante enviado por mensagem não confirma horário.
+                A vaga só é confirmada depois do pagamento: no Pix, quando a Sabrine confere o valor na conta (envie o comprovante pelo WhatsApp (37) 99859-8753); no cartão, quando o pagamento é aprovado.
                 Design sem henna, design com henna, coloração, Hydra Gloss e Brow Lamination: o valor total é pago antecipado.
                 Micropigmentação labial e de sobrancelhas: sinal de R$ 100 para reservar; o restante no dia do atendimento, no Pix ou no cartão.
               </p>
@@ -427,7 +520,7 @@ export function BookingFlow({
             <div>
               <p className="font-semibold text-foreground">Mesmo horário</p>
               <p className="mt-1 text-muted-foreground">
-                Se duas pessoas pagarem o mesmo horário, a vaga fica com quem teve o pagamento aprovado primeiro.
+                Se duas pessoas pagarem o mesmo horário, a vaga fica com quem teve o pagamento confirmado primeiro.
               </p>
             </div>
           </div>
