@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Copy, AlertCircle, ShieldCheck, CreditCard, Users, CalendarClock, Timer, CalendarDays } from "lucide-react";
+import { Check, Copy, AlertCircle, ShieldCheck, CreditCard, Users, CalendarClock, Timer, CalendarDays, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getAvailableSlots, requestBooking, listServices } from "@/lib/booking.functions";
 import { formatCurrencyCents } from "@/lib/dates";
 import { createCheckout } from "@/lib/payment.functions";
+import { pointsForCents } from "@/lib/loyalty.functions";
+import { loadClient, saveClient } from "@/lib/client-storage";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 type Service = Awaited<ReturnType<typeof listServices>>[number];
@@ -77,6 +80,28 @@ export function BookingFlow({
     setDone(false);
   }, [selectedServiceId]);
 
+  // Agilidade: cliente que já agendou neste aparelho não precisa digitar de novo.
+  useEffect(() => {
+    const saved = loadClient();
+    if (saved.name) setName((n) => n || saved.name!);
+    if (saved.phone) setPhone((p) => p || saved.phone!);
+  }, []);
+
+  // Agilidade: já abre no primeiro dia com horário livre.
+  useEffect(() => {
+    if (date || days.length === 0) return;
+    const first = days.find((d) => d.free > 0);
+    if (first) setDate(first.date);
+  }, [days, date]);
+
+  const pickTime = (t: string) => {
+    setTime(t);
+    // Leva a cliente direto para o próximo passo.
+    requestAnimationFrame(() =>
+      document.getElementById("passo-dados")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+  };
+
   const phoneDigits = phone.replace(/\D/g, "");
 
   const computeMissing = () => {
@@ -108,6 +133,7 @@ export function BookingFlow({
   const payOnline = async () => {
     if (!service || !date || !time) return;
     setSending(true);
+    saveClient({ name: name.trim(), phone: phoneDigits });
     try {
       const res = await createCheckout({
         data: {
@@ -131,6 +157,7 @@ export function BookingFlow({
     // Abre a janela já no clique para o celular não bloquear o WhatsApp.
     const win = window.open("", "_blank");
     setSending(true);
+    saveClient({ name: name.trim(), phone: phoneDigits });
     try {
       const res = await requestBooking({
         data: {
@@ -276,7 +303,7 @@ export function BookingFlow({
                         key={t}
                         type="button"
                         aria-pressed={t === time}
-                        onClick={() => setTime(t)}
+                        onClick={() => pickTime(t)}
                         className={`h-11 rounded-xl border-2 text-sm font-semibold transition-colors ${
                           t === time
                             ? "border-success bg-success text-success-foreground shadow-md"
@@ -302,7 +329,7 @@ export function BookingFlow({
 
       {/* 3. Dados */}
       {service && (
-        <div className="space-y-3">
+        <div id="passo-dados" className="scroll-mt-24 space-y-3">
           <h3 className="font-serif text-xl text-foreground">3. Seus dados</h3>
           <Input placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} aria-label="Seu nome" />
           <Input placeholder="WhatsApp com DDD — ex: (37) 99999-9999" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} aria-label="WhatsApp com DDD" />
@@ -359,6 +386,12 @@ export function BookingFlow({
             {service.deposit_cents && (
               <p className="text-xs text-muted-foreground">Sinal para reservar. O restante é pago no dia (Pix ou cartão).</p>
             )}
+          </div>
+          <div className="flex items-center gap-3 rounded-xl bg-primary px-4 py-3 text-primary-foreground">
+            <Star className="h-5 w-5 shrink-0 text-gold" />
+            <p className="text-sm">
+              Você ganha <b className="text-gold">{pointsForCents(dueNow(service))} pontos</b> no Clube Sabrine Beauty quando o pagamento for aprovado.
+            </p>
           </div>
           <Button size="lg" disabled={sending} className="h-14 w-full rounded-md text-base" onClick={() => void payOnline()}>
             <CreditCard className="mr-2 h-5 w-5" /> {sending ? "Abrindo pagamento..." : "Pagar com cartão ou Pix"}
@@ -436,6 +469,20 @@ export function BookingFlow({
           </div>
         </div>
       </div>
+
+      <Link
+        to="/cartao"
+        className="group flex items-center gap-4 rounded-2xl border border-gold/60 bg-primary p-5 text-primary-foreground transition-transform hover:-translate-y-0.5"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gold text-gold">
+          <Star className="h-5 w-5" />
+        </span>
+        <span className="flex-1">
+          <span className="block font-serif text-lg">Clube Sabrine Beauty</span>
+          <span className="block text-sm opacity-80">Agende, pague e ganhe pontos. 6 meses seguidos = Cartão Brow Beauty.</span>
+        </span>
+        <span className="text-gold transition-transform group-hover:translate-x-1">→</span>
+      </Link>
 
       <div className="border-t border-gold pt-6 text-center text-foreground">
         <p className="font-serif text-lg">Fiquem ligadas!</p>
