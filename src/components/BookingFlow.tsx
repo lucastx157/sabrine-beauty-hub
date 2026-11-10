@@ -50,17 +50,24 @@ export function BookingFlow({
 
   const { data: slots = [], isLoading } = useQuery({
     queryKey: ["slots", selectedServiceId],
-    queryFn: () => getAvailableSlots({ data: selectedServiceId ? { serviceId: selectedServiceId } : {} }),
+    queryFn: () =>
+      getAvailableSlots({
+        data: selectedServiceId ? { serviceId: selectedServiceId, includeOccupied: true } : { includeOccupied: true },
+      }),
     enabled: !!selectedServiceId,
   });
 
+  // Agenda completa do dia: horários livres e ocupados (ocupados só para exibição).
   const days = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, { time: string; occupied: boolean }[]>();
     for (const s of slots) {
-      if (s.occupied) continue;
-      map.set(s.date, [...(map.get(s.date) ?? []), s.time]);
+      map.set(s.date, [...(map.get(s.date) ?? []), { time: s.time, occupied: s.occupied }]);
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).map(([d, times]) => ({
+      date: d,
+      times,
+      free: times.filter((t) => !t.occupied).length,
+    }));
   }, [slots]);
 
   useEffect(() => {
@@ -207,50 +214,85 @@ export function BookingFlow({
       {service && (
         <div>
           <h3 className="mb-1 font-serif text-xl text-foreground">2. Dia e horário</h3>
-          <p className="mb-3 text-xs text-muted-foreground">Só aparecem os horários livres (em verde).</p>
+          <p className="mb-3 text-xs text-muted-foreground">Escolha o dia e toque em um horário livre.</p>
           {isLoading ? (
             <p className="animate-pulse text-sm text-muted-foreground">Carregando horários...</p>
           ) : days.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sem horários livres no momento. Chame a Sabrine no WhatsApp.</p>
+            <p className="text-sm text-muted-foreground">Sem horários no momento. Chame a Sabrine no WhatsApp.</p>
           ) : (
             <>
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {days.map(([d, times]) => {
+              <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2">
+                {days.map(({ date: d, free }) => {
                   const p = dateParts(d);
+                  const full = free === 0;
+                  const selected = d === date;
                   return (
-                    <Button variant="outline"
+                    <button
                       key={d}
                       type="button"
-                      aria-label={`Dia ${p.label}`}
+                      aria-label={`Dia ${p.label}${full ? " — agenda cheia" : ""}`}
+                      aria-pressed={selected}
                       onClick={() => { setDate(d); setTime(null); }}
-                      className={`flex h-auto min-w-[72px] shrink-0 flex-col items-center rounded-md border px-3 py-2 text-sm ${
-                        d === date ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card"
+                      className={`flex w-16 shrink-0 snap-start flex-col items-center rounded-2xl border px-2 py-3 transition-all ${
+                        selected
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : full
+                            ? "border-border bg-muted/40 text-muted-foreground"
+                            : "border-border bg-card text-foreground hover:border-primary/50"
                       }`}
                     >
-                      <span className="text-xs">{p.wd}</span>
-                      <span className="text-lg font-semibold">{p.day}</span>
-                      <span className="text-xs">{p.month}</span>
-                      <span className="mt-1 text-[10px]">{times.length} {times.length === 1 ? "vaga" : "vagas"}</span>
-                    </Button>
+                      <span className="text-[11px] uppercase tracking-wider opacity-80">{p.wd}</span>
+                      <span className={`text-xl font-semibold leading-tight ${full && !selected ? "line-through decoration-destructive/70" : ""}`}>{p.day}</span>
+                      <span className="text-[11px] opacity-80">{p.month}</span>
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1.5 h-1.5 w-1.5 rounded-full ${
+                          selected ? "bg-primary-foreground" : full ? "bg-destructive/70" : "bg-success"
+                        }`}
+                      />
+                    </button>
                   );
                 })}
               </div>
+              <div className="mt-2 flex items-center gap-4 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-success" /> Tem horário</span>
+                <span className="flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-destructive/70" /> Agenda cheia</span>
+              </div>
               {date && (
                 <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {(days.find(([d]) => d === date)?.[1] ?? []).map((t) => (
-                    <Button variant="outline"
-                      key={t}
-                      type="button"
-                      onClick={() => setTime(t)}
-                      className={`h-11 rounded-md border-2 py-2 text-sm font-semibold transition-colors ${
-                        t === time
-                          ? "border-success bg-success text-success-foreground"
-                          : "border-success/60 bg-success/10 text-success hover:bg-success/20"
-                      }`}
-                    >
-                      {t}
-                    </Button>
-                  ))}
+                  {(days.find((x) => x.date === date)?.times ?? []).map(({ time: t, occupied }) =>
+                    occupied ? (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled
+                        aria-label={`${t} — ocupado`}
+                        className="h-11 cursor-not-allowed rounded-xl border border-destructive/30 bg-destructive/5 text-sm font-medium text-destructive/80 line-through decoration-2"
+                      >
+                        {t}
+                      </button>
+                    ) : (
+                      <button
+                        key={t}
+                        type="button"
+                        aria-pressed={t === time}
+                        onClick={() => setTime(t)}
+                        className={`h-11 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                          t === time
+                            ? "border-success bg-success text-success-foreground shadow-md"
+                            : "border-success/60 bg-success/10 text-success hover:bg-success/20"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+              {date && (
+                <div className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm border-2 border-success/60 bg-success/10" /> Livre</span>
+                  <span className="flex items-center gap-1.5"><span className="text-destructive/80 line-through">00:00</span> Ocupado</span>
                 </div>
               )}
             </>
