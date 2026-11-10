@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CartaoRouteImport } from './routes/cartao'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as PagamentoFalhaRouteImport } from './routes/pagamento.falha'
 import { Route as PagamentoSucessoRouteImport } from './routes/pagamento.sucesso'
@@ -26,6 +27,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartaoRoute = CartaoRouteImport.update({
+  id: '/cartao',
+  path: '/cartao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSetupRoute = AdminSetupRouteImport.update({
@@ -64,6 +70,7 @@ const ApiPublicWhatsappWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/cartao': typeof CartaoRoute
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/cartao': typeof CartaoRoute
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/cartao': typeof CartaoRoute
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/cartao'
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/cartao'
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/cartao'
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
@@ -128,6 +140,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CartaoRoute: typeof CartaoRoute
   PagamentoFalhaRoute: typeof PagamentoFalhaRoute
   PagamentoSucessoRoute: typeof PagamentoSucessoRoute
   ApiPublicLembretesRoute: typeof ApiPublicLembretesRoute
@@ -149,6 +162,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cartao': {
+      id: '/cartao'
+      path: '/cartao'
+      fullPath: '/cartao'
+      preLoaderRoute: typeof CartaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/setup': {
@@ -209,6 +229,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  CartaoRoute: CartaoRoute,
   PagamentoFalhaRoute: PagamentoFalhaRoute,
   PagamentoSucessoRoute: PagamentoSucessoRoute,
   ApiPublicLembretesRoute: ApiPublicLembretesRoute,
