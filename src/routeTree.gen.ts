@@ -14,6 +14,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as PagamentoFalhaRouteImport } from './routes/pagamento.falha'
 import { Route as PagamentoSucessoRouteImport } from './routes/pagamento.sucesso'
+import { Route as ApiPublicLembretesRouteImport } from './routes/api/public/lembretes'
 import { Route as ApiPublicMercadopagoWebhookRouteImport } from './routes/api/public/mercadopago/webhook'
 import { Route as ApiPublicWhatsappWebhookRouteImport } from './routes/api/public/whatsapp/webhook'
 
@@ -42,6 +43,11 @@ const PagamentoSucessoRoute = PagamentoSucessoRouteImport.update({
   path: '/pagamento/sucesso',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLembretesRoute = ApiPublicLembretesRouteImport.update({
+  id: '/api/public/lembretes',
+  path: '/api/public/lembretes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMercadopagoWebhookRoute =
   ApiPublicMercadopagoWebhookRouteImport.update({
     id: '/api/public/mercadopago/webhook',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/lembretes': typeof ApiPublicLembretesRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/lembretes': typeof ApiPublicLembretesRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/admin/setup': typeof AdminSetupRoute
   '/pagamento/falha': typeof PagamentoFalhaRoute
   '/pagamento/sucesso': typeof PagamentoSucessoRoute
+  '/api/public/lembretes': typeof ApiPublicLembretesRoute
   '/api/public/mercadopago/webhook': typeof ApiPublicMercadopagoWebhookRoute
   '/api/public/whatsapp/webhook': typeof ApiPublicWhatsappWebhookRoute
 }
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
+    | '/api/public/lembretes'
     | '/api/public/mercadopago/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
+    | '/api/public/lembretes'
     | '/api/public/mercadopago/webhook'
     | '/api/public/whatsapp/webhook'
   id:
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/admin/setup'
     | '/pagamento/falha'
     | '/pagamento/sucesso'
+    | '/api/public/lembretes'
     | '/api/public/mercadopago/webhook'
     | '/api/public/whatsapp/webhook'
   fileRoutesById: FileRoutesById
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   PagamentoFalhaRoute: typeof PagamentoFalhaRoute
   PagamentoSucessoRoute: typeof PagamentoSucessoRoute
+  ApiPublicLembretesRoute: typeof ApiPublicLembretesRoute
   ApiPublicMercadopagoWebhookRoute: typeof ApiPublicMercadopagoWebhookRoute
   ApiPublicWhatsappWebhookRoute: typeof ApiPublicWhatsappWebhookRoute
 }
@@ -159,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PagamentoSucessoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/lembretes': {
+      id: '/api/public/lembretes'
+      path: '/api/public/lembretes'
+      fullPath: '/api/public/lembretes'
+      preLoaderRoute: typeof ApiPublicLembretesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mercadopago/webhook': {
       id: '/api/public/mercadopago/webhook'
       path: '/api/public/mercadopago/webhook'
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   PagamentoFalhaRoute: PagamentoFalhaRoute,
   PagamentoSucessoRoute: PagamentoSucessoRoute,
+  ApiPublicLembretesRoute: ApiPublicLembretesRoute,
   ApiPublicMercadopagoWebhookRoute: ApiPublicMercadopagoWebhookRoute,
   ApiPublicWhatsappWebhookRoute: ApiPublicWhatsappWebhookRoute,
 }
