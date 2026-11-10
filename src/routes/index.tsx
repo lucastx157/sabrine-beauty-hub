@@ -85,20 +85,20 @@ function priceRange(service: Service) {
   return min;
 }
 
-/** Foto pequena de cada procedimento (pelo nome). Sem foto, mostra o ícone. */
+/** Foto de destaque de cada procedimento (pelo nome). Sem foto, mostra o ícone. */
 const PROCEDURE_PHOTOS: Record<string, string> = {
   "micropigmentação de sobrancelhas": "/images/procedure-microblading.jpg",
   "micropigmentação labial": "/images/procedure-labial.jpg",
   "design sem henna":
-    "https://images.unsplash.com/photo-1594715271011-63c18acf1489?w=200&h=200&fit=crop&crop=faces&q=80&auto=format",
+    "https://images.unsplash.com/photo-1792679430669-caa0d70a9c52?w=800&h=600&fit=crop&q=85&auto=format",
   "design com henna":
-    "https://images.unsplash.com/photo-1698335107935-e2c8287c4947?w=200&h=200&fit=crop&q=80&auto=format",
+    "https://images.unsplash.com/photo-1785860458107-5be1a99d4188?w=800&h=600&fit=crop&crop=faces&q=85&auto=format",
   "coloração":
-    "https://images.unsplash.com/photo-1651839633408-3fccd671b832?w=200&h=200&fit=crop&q=80&auto=format",
+    "https://images.unsplash.com/photo-1656786979264-c01fbe9e8b2e?w=800&h=600&fit=crop&q=85&auto=format",
   "hydra gloss":
-    "https://images.unsplash.com/photo-1643630661247-2474f10e4f70?w=200&h=200&fit=crop&q=80&auto=format",
+    "https://images.unsplash.com/photo-1654375078795-7229b6458d25?w=800&h=600&fit=crop&q=85&auto=format",
   "brow lamination":
-    "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=200&h=200&fit=crop&q=80&auto=format",
+    "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=800&h=600&fit=crop&q=85&auto=format",
 };
 
 function procedurePhoto(name: string) {
@@ -225,18 +225,21 @@ function HomePage() {
                 key={service.id}
                 className="group flex flex-col overflow-hidden border border-border/60 bg-card transition-colors hover:border-brown-light"
               >
+                {procedurePhoto(service.name) && (
+                  <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                    <img
+                      src={procedurePhoto(service.name)}
+                      alt={service.name}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      width={800}
+                      height={600}
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 <div className="flex flex-1 flex-col p-6">
                   <div className="flex items-center gap-4">
-                    {procedurePhoto(service.name) ? (
-                      <img
-                        src={procedurePhoto(service.name)}
-                        alt={service.name}
-                        className="h-16 w-16 shrink-0 rounded-md object-cover"
-                        width={64}
-                        height={64}
-                        loading="lazy"
-                      />
-                    ) : (
+                    {!procedurePhoto(service.name) && (
                       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                         <Scissors className="h-5 w-5" />
                       </div>
