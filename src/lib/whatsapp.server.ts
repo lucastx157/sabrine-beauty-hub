@@ -78,6 +78,65 @@ export async function sendWhatsAppNotification(
   return { ok: true, skipped: false, data };
 }
 
+/**
+ * Envia um modelo (template) aprovado na Meta. Necessário para falar primeiro com a cliente
+ * fora da janela de 24h do WhatsApp Business. Parâmetros entram em ordem no corpo ({{1}}, {{2}}...).
+ */
+export async function sendWhatsAppTemplate(
+  toDigits: string,
+  templateName: string,
+  params: string[],
+  bookingId?: string,
+) {
+  const lovableApiKey = process.env["LOVABLE_API_KEY"];
+  const whatsappApiKey = process.env["WHATSAPP_API_KEY"];
+
+  if (!lovableApiKey || !whatsappApiKey) {
+    console.warn("[WhatsApp] skipped: missing LOVABLE_API_KEY or WHATSAPP_API_KEY");
+    return { ok: false, skipped: true, error: "WhatsApp not configured" };
+  }
+
+  const payload = {
+    messaging_product: "whatsapp",
+    to: toDigits.replace(/\D/g, ""),
+    type: "template",
+    template: {
+      name: templateName,
+      language: { code: process.env["WHATSAPP_REMINDER_TEMPLATE_LANG"] ?? "pt_BR" },
+      components: [
+        { type: "body", parameters: params.map((text) => ({ type: "text", text })) },
+      ],
+    },
+  };
+
+  const response = await fetch(`${GATEWAY_URL}/messages`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${lovableApiKey}`,
+      "X-Connection-Api-Key": whatsappApiKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    console.error(`[WhatsApp] template send failed (${response.status}): ${responseText}`);
+    return { ok: false, skipped: false, error: responseText };
+  }
+
+  let data: Record<string, unknown> | null = null;
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    // ignore
+  }
+  await saveOutboundMessage(bookingId, toDigits, payload, data).catch((err) => {
+    console.error("[WhatsApp] save outbound failed", err);
+  });
+  return { ok: true, skipped: false, data };
+}
+
 export function bookingNotificationMessage(args: {
   type: "created" | "cancelled" | "rescheduled";
   clientName: string;
