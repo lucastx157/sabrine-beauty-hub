@@ -48,9 +48,9 @@ export async function applyPayment(payment: MpPayment) {
   const paymentStatus = approved ? "approved" : rejected ? "rejected" : "pending";
   const amountOk = Math.round(payment.transaction_amount * 100) >= (booking.amount_cents ?? 0);
 
-  const update: Record<string, unknown> = { payment_status: paymentStatus, mp_payment_id: String(payment.id) };
-  if (approved && amountOk && booking.status === "pending_payment") update["status"] = "confirmed";
-  if (rejected && booking.status === "pending_payment") update["status"] = "cancelled";
+  const update: { payment_status: string; mp_payment_id: string; status?: string } = { payment_status: paymentStatus, mp_payment_id: String(payment.id) };
+  if (approved && amountOk && booking.status === "pending_payment") update.status = "confirmed";
+  if (rejected && booking.status === "pending_payment") update.status = "cancelled";
 
   const { error } = await supabaseAdmin.from("bookings").update(update).eq("id", bookingId);
   if (error) {
