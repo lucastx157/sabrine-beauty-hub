@@ -463,7 +463,7 @@ export function BookingFlow({
             <div>
               <p className="font-semibold text-foreground">Agenda</p>
               <p className="mt-1 text-muted-foreground">
-                Os horários da semana seguinte são liberados no domingo de manhã. Fiquem ligadas!
+                A agenda sempre muda: novos horários podem abrir a qualquer momento. Fiquem atentas!
               </p>
             </div>
           </div>
@@ -485,8 +485,8 @@ export function BookingFlow({
       </Link>
 
       <div className="border-t border-gold pt-6 text-center text-foreground">
-        <p className="font-serif text-lg">Fiquem ligadas!</p>
-        <p className="mt-1 text-sm font-medium">A agenda da próxima semana sai no domingo de manhã.</p>
+        <p className="font-serif text-lg">Fiquem atentas aos horários!</p>
+        <p className="mt-1 text-sm font-medium">A agenda sempre muda.</p>
       </div>
     </div>
   );
