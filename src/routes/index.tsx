@@ -96,7 +96,7 @@ const PROCEDURE_PHOTOS: Record<string, string> = {
   "coloração":
     "https://images.unsplash.com/photo-1633276115947-8d35f394a309?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "hydra gloss":
-    "https://images.unsplash.com/photo-1586811032606-f8fd4a8f80dd?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
+    "https://images.unsplash.com/photo-1654375078795-7229b6458d25?w=800&h=600&fit=crop&q=85&auto=format",
   "brow lamination":
     "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=800&h=600&fit=crop&q=85&auto=format",
 };
