@@ -90,13 +90,13 @@ const PROCEDURE_PHOTOS: Record<string, string> = {
   "micropigmentação de sobrancelhas": "/images/procedure-microblading.jpg",
   "micropigmentação labial": "/images/procedure-labial.jpg",
   "design sem henna":
-    "https://images.unsplash.com/photo-1792679430669-caa0d70a9c52?w=800&h=600&fit=crop&q=85&auto=format",
+    "https://images.unsplash.com/photo-1651839633408-3fccd671b832?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "design com henna":
-    "https://images.unsplash.com/photo-1785860458107-5be1a99d4188?w=800&h=600&fit=crop&crop=faces&q=85&auto=format",
+    "https://images.unsplash.com/photo-1698335107935-e2c8287c4947?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "coloração":
-    "https://images.unsplash.com/photo-1656786979264-c01fbe9e8b2e?w=800&h=600&fit=crop&q=85&auto=format",
+    "https://images.unsplash.com/photo-1633276115947-8d35f394a309?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "hydra gloss":
-    "https://images.unsplash.com/photo-1654375078795-7229b6458d25?w=800&h=600&fit=crop&q=85&auto=format",
+    "https://images.unsplash.com/photo-1586811032606-f8fd4a8f80dd?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "brow lamination":
     "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=800&h=600&fit=crop&q=85&auto=format",
 };
