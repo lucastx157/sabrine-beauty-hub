@@ -44,13 +44,13 @@ export async function applyPayment(payment: MpPayment) {
   if (!booking) return null;
 
   const approved = payment.status === "approved";
-  const rejected = ["rejected", "cancelled", "refunded", "charged_back"].includes(payment.status);
+  const rejected = ["rejected", "cancelled", "expired", "refunded", "charged_back"].includes(payment.status);
   const paymentStatus = approved ? "approved" : rejected ? "rejected" : "pending";
   const amountOk = Math.round(payment.transaction_amount * 100) >= (booking.amount_cents ?? 0);
 
   const update: { payment_status: string; mp_payment_id: string; status?: string } = { payment_status: paymentStatus, mp_payment_id: String(payment.id) };
   if (approved && amountOk && booking.status === "pending_payment") update.status = "confirmed";
-  if (rejected && booking.status === "pending_payment") update.status = "cancelled";
+  if (rejected && ["pending_payment", "confirmed", "rescheduled"].includes(booking.status)) update.status = "cancelled";
 
   const { error } = await supabaseAdmin.from("bookings").update(update).eq("id", bookingId);
   if (error) {

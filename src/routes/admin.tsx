@@ -143,6 +143,8 @@ function AdminDashboard() {
 
   useEffect(() => {
     void load();
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
   }, []);
 
   if (loading) return <div className="p-10 text-center">Carregando painel…</div>;
@@ -206,6 +208,8 @@ function WeekPanel() {
   };
   useEffect(() => {
     void load();
+    const timer = window.setInterval(() => void load(), 3000);
+    return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekStart]);
 
@@ -264,19 +268,26 @@ function WeekPanel() {
                   <div key={s.id} className="flex items-center">
                     <button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || !!s.booking}
                       onClick={() => run(() => toggleSlotBlocked({ data: { id: s.id, blocked: !s.is_blocked } }))}
                       className={`rounded-l-full px-4 py-2 text-sm font-semibold ${
-                        s.is_blocked
+                        s.is_blocked || s.booking
                           ? "bg-destructive/15 text-destructive line-through"
                           : "bg-success/15 text-success"
                       }`}
                     >
                       {s.start_time}
                     </button>
+                    {s.booking && (
+                      <div className="max-w-48 px-2 text-xs text-foreground">
+                        <p className="break-words font-semibold">{s.booking.clientName}</p>
+                        <p className="break-words text-muted-foreground">{s.booking.serviceName}</p>
+                        <span className="font-semibold text-destructive">{s.booking.label}</span>
+                      </div>
+                    )}
                     <button
                       type="button"
-                      disabled={busy}
+                      disabled={busy || !!s.booking}
                       aria-label={`Apagar ${s.start_time}`}
                       onClick={() => {
                         if (confirm(`Apagar o horário ${s.start_time}?`)) void run(() => deleteDateSlot({ data: { id: s.id } }));
@@ -348,7 +359,7 @@ function BookingsPanel({
     <Card className="p-6 shadow-card">
       <h2 className="mb-1 text-lg font-semibold text-foreground">Pedidos recebidos</h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Pedido novo não bloqueia o horário. Depois de ver o comprovante, toque em Confirmar (isso já ocupa o horário).
+        Todo pedido ocupa o horário na hora. Confirmar apenas registra que o pagamento foi conferido. Para liberar a vaga, toque em Cancelar; pagamentos no cartão recusados ou expirados também liberam o horário.
       </p>
       {bookings.length === 0 ? (
         <p className="text-muted-foreground">Nenhum agendamento encontrado.</p>
@@ -386,9 +397,9 @@ function BookingsPanel({
                         <a href={b.proofUrl} target="_blank" rel="noreferrer">Ver comprovante Pix</a>
                       </Button>
                     )}
-                    {(b.status === "pending_payment" || b.status === "requested") && (
+                    {["pending_payment", "requested", "confirmed", "rescheduled"].includes(b.status) && (
                       <>
-                        <Button size="sm" onClick={() => setStatus(b.id, "confirmed")}>Confirmar</Button>
+                        {(b.status === "pending_payment" || b.status === "requested") && <Button size="sm" onClick={() => setStatus(b.id, "confirmed")}>Confirmar</Button>}
                         <Button size="sm" variant="outline" onClick={() => setStatus(b.id, "cancelled")}>Cancelar</Button>
                       </>
                     )}
@@ -518,7 +529,11 @@ function RemindersPanel() {
   const [data, setData] = useState<ReminderData | null>(null);
   const [queue, setQueue] = useState<ReminderBooking[] | null>(null);
   const load = () => getReminderBookings({ data: undefined }).then(setData).catch(() => toast.error("Erro ao carregar lembretes."));
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => void load(), 5000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const remind = async (b: ReminderBooking) => {
     if (!data) return;

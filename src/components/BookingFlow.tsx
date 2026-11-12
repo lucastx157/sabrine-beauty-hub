@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Copy, AlertCircle, ShieldCheck, CreditCard, Users, CalendarClock, Timer, CalendarDays, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +41,7 @@ export function BookingFlow({
   onSelectService: (id: string) => void;
 }) {
   const service = services.find((s) => s.id === selectedServiceId) ?? null;
+  const queryClient = useQueryClient();
   const [date, setDate] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -67,6 +68,8 @@ export function BookingFlow({
         data: selectedServiceId ? { serviceId: selectedServiceId, includeOccupied: true } : { includeOccupied: true },
       }),
     enabled: !!selectedServiceId,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
   });
 
   // Agenda completa do dia: horários livres e ocupados (ocupados só para exibição).
@@ -150,8 +153,13 @@ export function BookingFlow({
     }
   };
 
-  const askCardLink = () => {
+  const askCardLink = async () => {
     if (!service || !date || !time) return;
+    const win = window.open("", "_blank");
+    setSending(true);
+    try {
+    await requestBooking({ data: { serviceId: service.id, date, time, clientName: name.trim(), clientPhone: phoneDigits, paymentMethod: "card", ...(otherPerson ? { attendeeName: attendee.trim() } : {}) } });
+    await queryClient.invalidateQueries({ queryKey: ["slots"] });
     const lines = [
       "Olá Sabrine! Quero pagar meu agendamento com cartão:",
       `• Procedimento: ${service.name}`,
@@ -162,7 +170,18 @@ export function BookingFlow({
       "",
       "Pode me enviar o link de pagamento?",
     ];
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+    if (win) win.location.href = url;
+    else window.location.href = url;
+    setShowPix(false);
+    setTime(null);
+    } catch (e) {
+      win?.close();
+      await queryClient.invalidateQueries({ queryKey: ["slots"] });
+      toast.error(e instanceof Error ? e.message : "Não foi possível enviar o pedido.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const payOnline = async () => {
@@ -220,8 +239,10 @@ export function BookingFlow({
       if (win) win.location.href = url;
       else window.location.href = url;
       setDone(true);
+      await queryClient.invalidateQueries({ queryKey: ["slots"] });
     } catch (e) {
       win?.close();
+      await queryClient.invalidateQueries({ queryKey: ["slots"] });
       toast.error(e instanceof Error ? e.message : "Não foi possível enviar. Tente novamente.");
     } finally {
       setSending(false);
@@ -483,7 +504,7 @@ export function BookingFlow({
               </>
             ) : (
               <>
-                <Button size="lg" variant="outline" className="h-12 w-full rounded-md" onClick={askCardLink}>
+                <Button size="lg" variant="outline" disabled={sending} className="h-12 w-full rounded-md" onClick={() => void askCardLink()}>
                   <CreditCard className="mr-2 h-5 w-5" /> Pagar com cartão
                 </Button>
                 <p className="text-center text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 import { createServerFn, createMiddleware } from "@tanstack/react-start";
 import { z } from "zod";
+import { OCCUPYING_STATUSES, occupiesSlot, overlapsSlot, occupancyLabel } from "./booking-occupancy";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const getAdminClient = async () => {
@@ -7,11 +8,10 @@ const getAdminClient = async () => {
   return supabaseAdmin;
 };
 
-const adminMiddleware = createMiddleware({ type: "function" }).server(
+const adminMiddleware = createMiddleware({ type: "function" }).middleware([requireSupabaseAuth]).server(
   async ({ context, next }) => {
-    const supabaseAdmin = await getAdminClient();
-    const userId = (context as unknown as { userId: string }).userId;
-    const { data } = await supabaseAdmin.rpc("has_role", {
+    const { supabase, userId } = context;
+    const { data } = await supabase.rpc("has_role", {
       _user_id: userId,
       _role: "admin",
     });
@@ -94,7 +94,7 @@ export const getAdminBookings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth, adminMiddleware])
   .handler(async () => {
     const supabaseAdmin = await getAdminClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
     const { data, error } = await supabaseAdmin
       .from("bookings")
       .select("*, services(name)")
@@ -128,7 +128,7 @@ export const updateBookingStatus = createServerFn({ method: "POST" })
     const supabaseAdmin = await getAdminClient();
     const { error } = await supabaseAdmin
       .from("bookings")
-      .update({ status: data.status })
+      .update({ status: data.status, ...(data.status === "confirmed" ? { payment_status: "approved" } : {}) })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -225,7 +225,16 @@ export const getDateSlots = createServerFn({ method: "POST" })
       .order("available_date")
       .order("start_time");
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => ({ ...r, start_time: r.start_time.slice(0, 5) }));
+    const { data: bookings, error: bookingError } = await supabaseAdmin.from("bookings")
+      .select("id, client_name, booking_date, start_time, end_time, status, reserved_until, services(name)")
+      .gte("booking_date", data.from).lte("booking_date", data.to).in("status", OCCUPYING_STATUSES);
+    if (bookingError) throw new Error(bookingError.message);
+    return (rows ?? []).map((r) => {
+      const booking = (bookings ?? []).find((b) => occupiesSlot(b) && overlapsSlot(b, r.available_date, r.start_time));
+      return { ...r, start_time: r.start_time.slice(0, 5), booking: booking ? {
+        id: booking.id, clientName: booking.client_name, serviceName: booking.services?.name ?? "Serviço", label: occupancyLabel(booking.status),
+      } : null };
+    });
   });
 
 export const toggleSlotBlocked = createServerFn({ method: "POST" })
@@ -308,13 +317,13 @@ export const getReminderBookings = createServerFn({ method: "GET" })
     const tomorrow = fmt(new Date(Date.now() + 24 * 3600_000));
     const { data, error } = await supabaseAdmin
       .from("bookings")
-      .select("id, client_name, client_phone, booking_date, start_time, reminder_sent_at, status, services(name)")
+      .select("id, client_name, client_phone, booking_date, start_time, reminder_sent_at, status, reserved_until, end_time, services(name)")
       .in("booking_date", [today, tomorrow])
-      .in("status", ["confirmed", "rescheduled", "requested"])
+      .in("status", OCCUPYING_STATUSES)
       .order("booking_date")
       .order("start_time");
     if (error) throw new Error(error.message);
-    return { today, tomorrow, bookings: data ?? [] };
+    return { today, tomorrow, bookings: (data ?? []).filter((b) => occupiesSlot(b)) };
   });
 
 export const markReminderSent = createServerFn({ method: "POST" })

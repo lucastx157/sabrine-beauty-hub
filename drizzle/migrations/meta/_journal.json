@@ -43,6 +43,13 @@
       "when": 1793970282856,
       "tag": "0005_mercadopago_and_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794495357975,
+      "tag": "0006_immediate_booking_occupancy",
+      "breakpoints": true
     }
   ]
 }

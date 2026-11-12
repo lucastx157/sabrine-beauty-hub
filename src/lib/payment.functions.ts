@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { requestBookingSchema, getAvailableSlots } from "./booking.functions";
+import { requestBookingSchema } from "./booking.functions";
+
+import { loadAvailableSlots } from "./booking-slots.server";
 
 const RESERVE_MINUTES = 20;
 
@@ -19,13 +21,13 @@ export const createCheckout = createServerFn({ method: "POST" })
       .single();
     if (!service) throw new Error("Procedimento não encontrado");
 
-    const slots = await getAvailableSlots({ data: { serviceId: data.serviceId, from: data.date, to: data.date } });
+    const slots = await loadAvailableSlots({ serviceId: data.serviceId, from: data.date, to: data.date });
     if (!slots.some((s) => s.time === data.time && !s.occupied)) {
       throw new Error("Esse horário não está mais livre. Escolha outro, por favor.");
     }
 
     const [h, m] = data.time.split(":").map(Number);
-    const end = Math.min(h! * 60 + m! + (service.duration_min ?? 30), 23 * 60 + 59);
+    const end = Math.min((h ?? 0) * 60 + (m ?? 0) + (service.duration_min ?? 30), 23 * 60 + 59);
     const endStr = `${String(Math.floor(end / 60)).padStart(2, "0")}:${String(end % 60).padStart(2, "0")}`;
     const amount = service.deposit_cents ?? service.price_min ?? 0;
     if (amount <= 0) throw new Error("Valor do procedimento não definido.");

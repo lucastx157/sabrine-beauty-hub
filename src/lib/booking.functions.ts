@@ -8,7 +8,7 @@ import {
   isAtLeastHoursBefore,
   formatBrazilDate,
 } from "./dates";
-import { ensureMondaySlots } from "./monday-slots.server";
+import { loadAvailableSlots } from "./booking-slots.server";
 import { sendWhatsAppNotification, bookingNotificationMessage } from "./whatsapp.server";
 
 const getAdminClient = async () => {
@@ -58,113 +58,7 @@ function minutesToTimeStr(minutes: number) {
 export const getAvailableSlots = createServerFn({ method: "POST" })
   .inputValidator((data) => slotSchema.parse(data))
   .handler(async ({ data }) => {
-    const supabaseAdmin = await getAdminClient();
-
-    const now = nowInBrazil();
-    const today = startOfDay(now);
-    const from = data.from ? parseISO(data.from) : today;
-    const effectiveFrom = isBefore(from, today) ? today : from;
-    const to = data.to ? parseISO(data.to) : addDays(effectiveFrom, 120);
-
-    // A agenda vem só de availability_overrides (horários por data).
-    // As segundas recebem automaticamente a grade fixa de MONDAY_SLOTS.
-    await ensureMondaySlots(
-      supabaseAdmin,
-      formatBrazilDate(effectiveFrom),
-      formatBrazilDate(to),
-      formatBrazilDate(today),
-    );
-
-    const { data: bookings, error: bookError } = await supabaseAdmin
-      .from("bookings")
-      .select("booking_date, start_time, end_time, status, reserved_until")
-      .gte("booking_date", formatBrazilDate(effectiveFrom))
-      .lte("booking_date", formatBrazilDate(to))
-      .in("status", ["confirmed", "rescheduled", "pending_payment"]);
-    if (bookError) throw new Error(bookError.message);
-
-    const { data: overrides, error: overrideError } = await supabaseAdmin
-      .from("availability_overrides")
-      .select("available_date, start_time, is_blocked")
-      .eq("active", true)
-      .gte("available_date", formatBrazilDate(effectiveFrom))
-      .lte("available_date", formatBrazilDate(to));
-    if (overrideError) throw new Error(overrideError.message);
-
-    const nowMs = Date.now();
-    const booked = (bookings ?? [])
-      // Reserva aguardando Mercado Pago expira em 20 min e libera o horário.
-      .filter((b) => !(b.status === "pending_payment" && b.reserved_until && new Date(b.reserved_until).getTime() < nowMs))
-      .map((b) => ({
-      date: b.booking_date,
-      start: timeStrToMinutes(b.start_time),
-      end: timeStrToMinutes(b.end_time),
-    }));
-
-    const slots: {
-      date: string;
-      time: string;
-      serviceId?: string;
-      label: string;
-      occupied: boolean;
-    }[] = [];
-
-    for (let d = new Date(effectiveFrom); !isBefore(to, d); d = addDays(d, 1)) {
-      const dateStr = formatBrazilDate(d);
-      const daySlots = new Set<string>();
-      const occupiedSlots = new Set<string>();
-
-      const dateOverrides = (overrides ?? []).filter(
-        (o) => o.available_date === dateStr,
-      );
-
-      if (dateOverrides.length > 0) {
-        // Horários cadastrados individualmente para essa data: aparecem na
-        // hora, sem esperar a janela de antecedência semanal.
-        for (const o of dateOverrides) {
-          const t = timeStrToMinutes(o.start_time.slice(0, 5));
-          const slotStart = set(d, {
-            hours: Math.floor(t / 60),
-            minutes: t % 60,
-            seconds: 0,
-            milliseconds: 0,
-          });
-          if (isBefore(slotStart, now)) continue;
-
-          const isBooked = booked.some(
-            (b) => b.date === dateStr && t >= b.start && t < b.end,
-          );
-          if (o.is_blocked || isBooked) {
-            occupiedSlots.add(minutesToTimeStr(t));
-          } else {
-            daySlots.add(minutesToTimeStr(t));
-          }
-        }
-      }
-      // Datas sem horários cadastrados não aparecem.
-
-      const entries = [
-        ...Array.from(daySlots).map((time) => ({ time, occupied: false })),
-        ...(data.includeOccupied
-          ? Array.from(occupiedSlots)
-              .filter((t) => !daySlots.has(t))
-              .map((time) => ({ time, occupied: true }))
-          : []),
-      ];
-      entries
-        .sort((a, b) => timeStrToMinutes(a.time) - timeStrToMinutes(b.time))
-        .forEach(({ time, occupied }) =>
-          slots.push({
-            date: dateStr,
-            time,
-            ...(data.serviceId ? { serviceId: data.serviceId } : {}),
-            label: `${formatDisplayDate(dateStr)} às ${time}`,
-            occupied,
-          }),
-        );
-    }
-
-    return slots;
+    return loadAvailableSlots(data);
   });
 
 export const requestBookingSchema = z.object({
@@ -177,6 +71,7 @@ export const requestBookingSchema = z.object({
     .transform((v) => v.replace(/\D/g, ""))
     .pipe(z.string().regex(/^\d{10,11}$/, "WhatsApp com DDD inválido")),
   attendeeName: z.string().trim().min(2).max(100).optional(),
+  paymentMethod: z.enum(["pix", "card"]).default("pix"),
 });
 
 /** Valor a pagar agora no Pix: sinal quando existir, senão o preço do procedimento. */
@@ -184,8 +79,7 @@ export function amountDueNowCents(service: { price_min: number | null; deposit_c
   return service.deposit_cents ?? service.price_min ?? 0;
 }
 
-// Pedido de agendamento: NÃO bloqueia o horário. A Sabrine bloqueia no painel
-// depois de conferir o comprovante enviado pelo WhatsApp.
+// Todo pedido ocupa o horário imediatamente; o banco impede pedidos concorrentes.
 export const requestBooking = createServerFn({ method: "POST" })
   .inputValidator((data) => requestBookingSchema.parse(data))
   .handler(async ({ data }) => {
@@ -200,14 +94,12 @@ export const requestBooking = createServerFn({ method: "POST" })
       .single();
     if (serviceError || !service) throw new Error("Procedimento não encontrado");
 
-    const slots = await getAvailableSlots({
-      data: { serviceId: data.serviceId, from: data.date, to: data.date },
-    });
+    const slots = await loadAvailableSlots({ serviceId: data.serviceId, from: data.date, to: data.date });
     if (!slots.some((s) => s.time === data.time && !s.occupied)) {
       throw new Error("Esse horário não está mais livre. Escolha outro, por favor.");
     }
 
-    const endMinutes = hour! * 60 + minute! + (service.duration_min ?? 30);
+    const endMinutes = (hour ?? 0) * 60 + (minute ?? 0) + (service.duration_min ?? 30);
     const amount = amountDueNowCents(service);
 
     const { data: booking, error } = await supabaseAdmin
@@ -221,11 +113,13 @@ export const requestBooking = createServerFn({ method: "POST" })
         start_time: data.time,
         end_time: minutesToTimeStr(Math.min(endMinutes, 23 * 60 + 59)),
         amount_cents: amount,
-        status: "requested",
+        status: data.paymentMethod === "card" ? "pending_payment" : "requested",
+        payment_status: "pending",
+        reserved_until: data.paymentMethod === "card" ? new Date(Date.now() + 20 * 60_000).toISOString() : null,
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error || !booking) throw new Error(error?.code === "23P01" ? "Esse horário não está mais livre. Escolha outro, por favor." : "Não foi possível enviar o pedido. Tente novamente.");
 
     return { id: booking.id, amountCents: amount, serviceName: service.name };
   });
@@ -278,6 +172,9 @@ export const cancelBooking = createServerFn({ method: "POST" })
       .single();
     if (fetchError || !booking) throw new Error("Agendamento não encontrado.");
 
+    if (booking.status === "requested" || booking.status === "pending_payment") {
+      throw new Error("Para cancelar o pedido, fale com a Sabrine.");
+    }
     if (!isAtLeastHoursBefore(booking.booking_date, booking.start_time, 24)) {
       throw new Error("Cancelamento só é permitido até 24 horas antes do horário marcado.");
     }
@@ -340,9 +237,7 @@ export const rescheduleBooking = createServerFn({ method: "POST" })
       .toString()
       .padStart(2, "0")}:${(endMinutes % 60).toString().padStart(2, "0")}`;
 
-    const slots = await getAvailableSlots({
-      data: { serviceId: booking.service_id!, from: data.newDate, to: data.newDate },
-    });
+    const slots = await loadAvailableSlots({ serviceId: booking.service_id ?? undefined, from: data.newDate, to: data.newDate });
     const isAvailable = slots.some((s) => s.time === data.newTime && !s.occupied);
     if (!isAvailable) throw new Error("O novo horário não está mais disponível. Escolha outro, por favor.");
 
