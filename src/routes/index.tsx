@@ -97,10 +97,8 @@ const PROCEDURE_PHOTOS: Record<string, string> = {
   "design sem henna": "/images/procedure-design-sem-henna.jpg",
   "design com henna": "/images/procedure-design-com-henna.jpg",
   "coloração": "/images/procedure-coloracao.jpg",
-  "hydra gloss":
-    "https://images.unsplash.com/photo-1654375078795-7229b6458d25?w=800&h=600&fit=crop&q=85&auto=format",
-  "brow lamination":
-    "https://images.unsplash.com/photo-1581003250898-36050e78fcd3?w=800&h=600&fit=crop&q=85&auto=format",
+  "hydra gloss": "/images/procedure-hydra-gloss.jpg",
+  "brow lamination": "/images/procedure-brow-lamination.jpg",
 };
 
 function procedurePhoto(name: string) {
