@@ -95,8 +95,7 @@ const PROCEDURE_PHOTOS: Record<string, string> = {
   "micro labial": "/images/procedure-micro-labial.jpg",
   "design sem henna": "/images/procedure-design-sem-henna.jpg",
   "design com henna": "/images/procedure-design-com-henna.jpg",
-  "coloração":
-    "https://images.unsplash.com/photo-1633276115947-8d35f394a309?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
+  "coloração": "/images/procedure-coloracao.jpg",
   "hydra gloss":
     "https://images.unsplash.com/photo-1654375078795-7229b6458d25?w=800&h=600&fit=crop&q=85&auto=format",
   "brow lamination":
