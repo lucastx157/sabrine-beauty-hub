@@ -25,6 +25,7 @@ import {
 import { formatDisplayDate, formatCurrencyCents, formatPhone } from "@/lib/dates";
 import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { LeadsPanel } from "@/components/admin/LeadsPanel";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -162,12 +163,13 @@ function AdminDashboard() {
 
         <Tabs defaultValue="week" className="space-y-4">
         <InstallHint />
-          <TabsList className="grid w-full grid-cols-4 rounded-full bg-secondary p-1 text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-5 rounded-full bg-secondary p-1 text-xs sm:text-sm">
             <TabsTrigger value="week" className="rounded-full">Semana</TabsTrigger>
             <TabsTrigger value="bookings" className="rounded-full">
               Pedidos{newCount > 0 ? ` (${newCount})` : ""}
             </TabsTrigger>
             <TabsTrigger value="reminders" className="rounded-full">Lembretes</TabsTrigger>
+            <TabsTrigger value="leads" className="rounded-full">Contatos</TabsTrigger>
             <TabsTrigger value="config" className="rounded-full">Ajustes</TabsTrigger>
           </TabsList>
 
@@ -179,6 +181,9 @@ function AdminDashboard() {
           </TabsContent>
           <TabsContent value="reminders">
             <RemindersPanel />
+          </TabsContent>
+          <TabsContent value="leads">
+            <LeadsPanel />
           </TabsContent>
           <TabsContent value="config">
             <ConfigPanel config={config} onSaved={load} />

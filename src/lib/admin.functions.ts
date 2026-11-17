@@ -138,7 +138,10 @@ export const getAppConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth, adminMiddleware])
   .handler(async () => {
     const supabaseAdmin = await getAdminClient();
-    const { data, error } = await supabaseAdmin.from("app_config").select("*");
+    const { data, error } = await supabaseAdmin
+      .from("app_config")
+      .select("*")
+      .not("key", "like", "lead:%");
     if (error) throw new Error(error.message);
     const config: Record<string, string> = {};
     for (const row of data ?? []) {

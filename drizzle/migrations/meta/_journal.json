@@ -50,6 +50,13 @@
       "when": 1794495357975,
       "tag": "0006_immediate_booking_occupancy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794581757975,
+      "tag": "0007_leads",
+      "breakpoints": true
     }
   ]
 }

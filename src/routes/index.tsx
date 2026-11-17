@@ -28,6 +28,7 @@ import { formatCurrencyCents } from "@/lib/dates";
 import { toast } from "sonner";
 import { BookingFlow } from "@/components/BookingFlow";
 import { CinematicHero } from "@/components/CinematicHero";
+import { LeadForm, LEAD_INTERESTS } from "@/components/LeadForm";
 
 const servicesQueryOptions = queryOptions({
   queryKey: ["services"],
@@ -87,12 +88,13 @@ function priceRange(service: Service) {
 
 /** Foto de destaque de cada procedimento (pelo nome). Sem foto, mostra o ícone. */
 const PROCEDURE_PHOTOS: Record<string, string> = {
-  "micropigmentação de sobrancelhas": "/images/procedure-microblading.jpg",
-  "micropigmentação labial": "/images/procedure-labial.jpg",
-  "design sem henna":
-    "https://images.unsplash.com/photo-1651839633408-3fccd671b832?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
-  "design com henna":
-    "https://images.unsplash.com/photo-1698335107935-e2c8287c4947?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
+  // Fotos reais de atendimentos da Sabrine (sem edição).
+  "micropigmentação de sobrancelhas": "/images/procedure-micro-sobrancelha.jpg",
+  "micropigmentação de sobrancelha": "/images/procedure-micro-sobrancelha.jpg",
+  "micropigmentação labial": "/images/procedure-micro-labial.jpg",
+  "micro labial": "/images/procedure-micro-labial.jpg",
+  "design sem henna": "/images/procedure-design-sem-henna.jpg",
+  "design com henna": "/images/procedure-design-com-henna.jpg",
   "coloração":
     "https://images.unsplash.com/photo-1633276115947-8d35f394a309?w=900&h=675&fit=crop&crop=faces,edges&q=90&auto=format",
   "hydra gloss":
@@ -129,13 +131,13 @@ const awards = [
 
 const gallery = [
   {
-    image: "/images/procedure-microblading.jpg",
+    image: "/images/procedure-micro-sobrancelha.jpg",
     title: "Micropigmentação Fio a Fio",
     subtitle: "Fios hiper-realistas",
     description: "Técnica de fios ultra-finos desenhados um a um para preencher falhas e criar sobrancelhas naturais e harmoniosas.",
   },
   {
-    image: "/images/procedure-labial.jpg",
+    image: "/images/procedure-micro-labial.jpg",
     title: "Micropigmentação Labial",
     subtitle: "Lábios definidos",
     description: "Contorno desenhado e cor natural revitalizada, com acabamento hidratado e aspecto saudável.",
@@ -169,6 +171,12 @@ function HomePage() {
   const { data: services } = useSuspenseQuery(servicesQueryOptions);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
+  const [leadInterest, setLeadInterest] = useState(LEAD_INTERESTS[0]!);
+
+  const goToContact = (interest?: string) => {
+    if (interest) setLeadInterest(interest);
+    document.getElementById("contato")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // Sempre abrir no topo (exceto links com #).
   useEffect(() => {
@@ -199,7 +207,7 @@ function HomePage() {
           </div>
         </div>
         {menuOpen && <nav id="mobile-menu" aria-label="Navegação no celular" className="grid gap-1 border-t border-border px-5 py-3 lg:hidden">
-          {[["#servicos", "Procedimentos"], ["#sobre", "A Sabrine"], ["#resultados", "Resultados"], ["#mentoria", "Mentoria"], ["#assistente", "Assistente"]].map(([href, label]) => <Button key={href} asChild variant="ghost" className="justify-start" onClick={() => setMenuOpen(false)}><a href={href}>{label}</a></Button>)}
+          {[["#servicos", "Procedimentos"], ["#contato", "Fale com a Sabrine"], ["#sobre", "A Sabrine"], ["#resultados", "Resultados"], ["#mentoria", "Mentoria"], ["#assistente", "Assistente"]].map(([href, label]) => <Button key={href} asChild variant="ghost" className="justify-start" onClick={() => setMenuOpen(false)}><a href={href}>{label}</a></Button>)}
           <Button asChild variant="ghost" className="justify-start text-gold-dark" onClick={() => setMenuOpen(false)}><Link to="/cartao">Cartão Brow Beauty</Link></Button>
           <Button asChild variant="ghost" className="justify-start"><a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noreferrer">Contato <Phone /></a></Button>
         </nav>}
@@ -264,6 +272,35 @@ function HomePage() {
               </Card>
             ))}
 
+            {/* Extensão de cílios — ainda não disponível */}
+            <Card className="group flex flex-col overflow-hidden border border-border/60 bg-card">
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+                <img
+                  src="/images/procedure-cilios.jpg"
+                  alt="Extensão de cílios feita pela Sabrine"
+                  className="h-full w-full object-cover opacity-90"
+                  width={800}
+                  height={600}
+                  loading="lazy"
+                />
+                <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-foreground">
+                  Em breve
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="text-xl font-semibold text-card-foreground">Extensão de Cílios</h3>
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">Agenda fechada no momento</p>
+                <p className="mt-4 flex-1 text-sm text-muted-foreground">
+                  A Sabrine não está atendendo cílios agora, mas vai liberar a agenda em breve. Deixe seu contato e
+                  seja avisada primeiro.
+                </p>
+                <Button variant="outline" className="mt-6 rounded-md" onClick={() => goToContact("Extensão de cílios (em breve)")}>
+                  Quero ser avisada
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+
             {/* AI helper card */}
             <Card className="flex flex-col justify-between border border-primary/30 bg-secondary p-6">
               <div>
@@ -283,6 +320,23 @@ function HomePage() {
               </Button>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Contato para retorno */}
+      <section id="contato" className="relative scroll-mt-24 py-16 md:py-24">
+        <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 lg:grid-cols-[1fr_1.2fr]">
+          <div>
+            <span className="text-xs font-semibold text-brown-light">Sem compromisso</span>
+            <h2 className="mt-4 font-serif text-4xl font-semibold text-foreground md:text-5xl">
+              Quer conversar antes de agendar?
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              Ficou com dúvida sobre a micropigmentação, tem receio do procedimento ou quer saber se é o ideal para
+              você? Deixe seu nome e WhatsApp. A própria Sabrine chama você para conversar com calma.
+            </p>
+          </div>
+          <LeadForm interest={leadInterest} onInterestChange={setLeadInterest} />
         </div>
       </section>
 
