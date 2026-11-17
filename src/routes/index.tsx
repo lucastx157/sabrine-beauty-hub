@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { BookingFlow } from "@/components/BookingFlow";
 import { CinematicHero } from "@/components/CinematicHero";
 import { LeadForm, LEAD_INTERESTS } from "@/components/LeadForm";
+import { RealPhotoSeal, isRealPhoto } from "@/components/RealPhotoSeal";
 
 const servicesQueryOptions = queryOptions({
   queryKey: ["services"],
@@ -233,7 +234,7 @@ function HomePage() {
                 className="group flex flex-col overflow-hidden border border-border/60 bg-card transition-colors hover:border-brown-light"
               >
                 {procedurePhoto(service.name) && (
-                  <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
                     <img
                       src={procedurePhoto(service.name)}
                       alt={service.name}
@@ -242,6 +243,7 @@ function HomePage() {
                       height={600}
                       loading="lazy"
                     />
+                    {isRealPhoto(procedurePhoto(service.name)) && <RealPhotoSeal />}
                   </div>
                 )}
                 <div className="flex flex-1 flex-col p-6">
@@ -285,6 +287,7 @@ function HomePage() {
                 <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-foreground">
                   Em breve
                 </span>
+                <RealPhotoSeal />
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="text-xl font-semibold text-card-foreground">Extensão de Cílios</h3>
@@ -444,6 +447,7 @@ function HomePage() {
                     height={1000}
                     loading="lazy"
                   />
+                  {isRealPhoto(item.image) && <RealPhotoSeal />}
                 </div>
                 <h4 className="font-serif text-xl text-foreground">{item.title}</h4>
                 <p className="mt-2 text-sm text-brown-light">{item.subtitle}</p>
