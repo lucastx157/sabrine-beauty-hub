@@ -335,6 +335,10 @@ function HomePage() {
               Ficou com dúvida sobre a micropigmentação, tem receio do procedimento ou quer saber se é o ideal para
               você? Deixe seu nome e WhatsApp. A própria Sabrine chama você para conversar com calma.
             </p>
+            <p className="mt-4 text-muted-foreground">
+              Ao enviar, você baixa na hora o <strong className="text-foreground">guia gratuito</strong> com tudo o
+              que precisa saber antes de fazer a micropigmentação de sobrancelha.
+            </p>
           </div>
           <LeadForm interest={leadInterest} onInterestChange={setLeadInterest} />
         </div>

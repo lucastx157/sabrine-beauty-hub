@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Send } from "lucide-react";
+import { CheckCircle2, Download, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { submitLead } from "@/lib/leads.functions";
+
+const GUIDE_URL = "/guia-micropigmentacao-sobrancelha.pdf";
 
 export const LEAD_INTERESTS = [
   "Micropigmentação de sobrancelha",
@@ -79,6 +81,11 @@ export function LeadForm({
           Obrigada, {name.split(" ")[0]}. A Sabrine vai chamar você no WhatsApp para conversar com
           calma e tirar todas as suas dúvidas.
         </p>
+        <Button asChild className="mt-2 h-11 rounded-md">
+          <a href={GUIDE_URL} target="_blank" rel="noreferrer" download>
+            <Download className="mr-2 h-4 w-4" /> Baixar o guia gratuito
+          </a>
+        </Button>
       </div>
     );
   }
