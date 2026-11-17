@@ -28,6 +28,7 @@ import { formatCurrencyCents } from "@/lib/dates";
 import { toast } from "sonner";
 import { BookingFlow } from "@/components/BookingFlow";
 import { CinematicHero } from "@/components/CinematicHero";
+import { Trajetoria } from "@/components/Trajetoria";
 import { LeadForm, LEAD_INTERESTS } from "@/components/LeadForm";
 import { RealPhotoSeal, isRealPhoto } from "@/components/RealPhotoSeal";
 
@@ -212,6 +213,8 @@ function HomePage() {
       </header>
 
       <CinematicHero onBook={() => goToBooking()} instagramUrl={INSTAGRAM_URL} />
+
+      <Trajetoria onBook={() => goToBooking()} />
 
       {/* Services */}
       <section id="servicos" className="relative py-16 md:py-24">
