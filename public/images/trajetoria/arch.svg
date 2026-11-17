@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F3DD9B"/><stop offset=".3" stop-color="#C99A3F"/>
+      <stop offset=".55" stop-color="#7E5A1E"/><stop offset=".8" stop-color="#E2BE6E"/><stop offset="1" stop-color="#8A6223"/>
+    </linearGradient>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#150609"/><stop offset=".5" stop-color="#2B0C12"/><stop offset="1" stop-color="#120507"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#w)" fill-rule="evenodd" d="M0 0H1000V1000H0Z M150 1000V360 A350 270 0 0 1 850 360V1000Z"/>
+  <path fill="none" stroke="url(#g)" stroke-width="10" vector-effect="non-scaling-stroke" d="M150 1000V360 A350 270 0 0 1 850 360V1000"/>
+  <path fill="none" stroke="#5C3F14" stroke-width="4" vector-effect="non-scaling-stroke" d="M128 1000V355 A372 290 0 0 1 872 355V1000"/>
+  <path fill="none" stroke="url(#g)" stroke-width="3" vector-effect="non-scaling-stroke" d="M112 1000V352 A388 302 0 0 1 888 352V1000"/>
+  <rect x="40" y="0" width="22" height="1000" fill="url(#g)" opacity=".85"/>
+  <rect x="938" y="0" width="22" height="1000" fill="url(#g)" opacity=".85"/>
+  <path fill="url(#g)" d="M465 70 L535 70 L522 128 L478 128 Z"/>
+  <circle cx="500" cy="52" r="14" fill="url(#g)"/>
+</svg>
