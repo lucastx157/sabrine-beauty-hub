@@ -158,7 +158,7 @@ const SEGMENTS = Array.from({ length: N + 1 }, (_, k) => k + 1); // trechos do c
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-export function Trajetoria({ onBook }: { onBook: () => void }) {
+function PalaceFull({ onBook }: { onBook: () => void }) {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
@@ -348,4 +348,193 @@ export function Trajetoria({ onBook }: { onBook: () => void }) {
       </div>
     </section>
   );
+}
+
+/* ===================== Versão leve (celular) =====================
+   Um único fundo pré-desenhado do corredor que "avança" por zoom (o desenho é
+   auto-semelhante: cada arco é 1,6x o seguinte, então o zoom fecha o ciclo sem
+   emenda) e só 2–3 altares visíveis por vez, movidos apenas com transform. */
+const R = 1.6; // razão de escala entre arcos consecutivos no fundo
+const S1 = 0.53; // escala do 1º arco no desenho
+const BG_W = 430;
+const BG_H = 932;
+const VP_Y = 0.4; // ponto de fuga (40% da altura)
+
+function PalaceLite({ onBook }: { onBook: () => void }) {
+  const root = useRef<HTMLElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const bg = useRef<HTMLImageElement>(null);
+  const altars = useRef<(HTMLDivElement | null)[]>([]);
+  const [active, setActive] = useState(-1);
+  const [phase, setPhase] = useState<"doors" | "hall" | "end">("doors");
+
+  useEffect(() => {
+    const el = root.current;
+    const st = stage.current;
+    const img = bg.current;
+    if (!el || !st || !img) return;
+    let raf = 0;
+    let vw = 0;
+    let vh = 0;
+    let g = 1;
+    const measure = () => {
+      vw = st.clientWidth;
+      vh = st.clientHeight;
+      g = Math.max(vw / BG_W, vh / BG_H);
+      img.style.width = `${BG_W * g}px`;
+      img.style.height = `${BG_H * g}px`;
+      img.style.left = `${vw / 2 - (BG_W * g) / 2}px`;
+      img.style.top = `${VP_Y * vh - VP_Y * BG_H * g}px`;
+    };
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      const p = clamp(-r.top / Math.max(1, r.height - vh), 0, 1);
+      const doorEnd = 0.09;
+      const open = clamp(p / doorEnd, 0, 1);
+      const walk = clamp((p - doorEnd) / (1 - doorEnd), 0, 1);
+      const ease = open * open * (3 - 2 * open);
+      const v = open < 1 ? ease * 0.5 : 0.5 + walk * (N + 0.7);
+      st.style.setProperty("--open", ease.toFixed(3));
+      const frac = v - Math.floor(v);
+      img.style.transform = `scale(${Math.pow(R, frac).toFixed(4)})`;
+      for (let i = 0; i < N; i++) {
+        const a = altars.current[i];
+        if (!a) continue;
+        const n = i + 1.5 - v; // posição relativa em "arcos" à frente
+        if (n < -1.6 || n > 3.2) {
+          a.style.visibility = "hidden";
+          continue;
+        }
+        const sg = S1 * Math.pow(R, -n) * g;
+        const x = vw / 2 + (i % 2 ? 135 : -135) * sg;
+        const y = VP_Y * vh + 440 * sg;
+        a.style.visibility = "visible";
+        a.style.opacity = clamp(3.2 - n, 0, 1).toFixed(3);
+        a.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${sg.toFixed(4)}) perspective(900px) rotateY(${i % 2 ? -32 : 32}deg) translate(-50%,-100%)`;
+      }
+      setActive(open < 1 ? -1 : clamp(Math.floor(v - 1), 0, N - 1));
+      setPhase(open < 1 ? "doors" : v > N + 0.95 ? "end" : "hall");
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+    const onResize = () => {
+      measure();
+      onScroll();
+    };
+    measure();
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const c = active >= 0 ? CHAPTERS[active] : null;
+
+  return (
+    <section
+      id="trajetoria"
+      ref={root}
+      className="castle castle-lite"
+      style={{ height: `${Math.round(N * 90 + 200)}svh` }}
+      aria-labelledby="traj-title"
+    >
+      <div ref={stage} className="castle-stage">
+        <div className="lite-view" aria-hidden="true">
+          <img ref={bg} className="lite-bg" src={`${IMG}/corredor.webp`} alt="" decoding="async" fetchPriority="low" />
+          <div className="lite-depth" />
+          {CHAPTERS.map((ch, i) => (
+            <div
+              key={ch.title}
+              ref={(node) => {
+                altars.current[i] = node;
+              }}
+              className="altar lite-altar"
+              style={{ zIndex: N - i }}
+            >
+              <div className="altar-frame">
+                <Corners />
+                <img src={ch.img} alt="" loading="lazy" decoding="async" />
+                {ch.award && <span className="altar-award">Prêmio</span>}
+              </div>
+              <div className="altar-base">
+                <span>{ch.label}</span>
+              </div>
+            </div>
+          ))}
+          <div className="lite-doors">
+            <div className="door left" />
+            <div className="door right" />
+          </div>
+        </div>
+
+        <div className="castle-vignette" aria-hidden="true" />
+
+        <div className="castle-title" aria-hidden={phase !== "doors"}>
+          <p className="castle-kick">Sabrine Beauty</p>
+          <h2 id="traj-title">Minha Trajetória</h2>
+          <p className="castle-sub">Uma história de fé, trabalho e coragem</p>
+          <p className="castle-hint">Role a tela para entrar</p>
+        </div>
+
+        <div className={`castle-caption ${c && phase === "hall" ? "is-on" : ""}`} aria-hidden="true">
+          {c && (
+            <div key={c.title} className="castle-caption-inner">
+              <p className="cap-label">
+                {c.label}
+                {c.award && <Trophy />}
+              </p>
+              <h3>{c.title}</h3>
+              <p className="cap-text">{c.text}</p>
+            </div>
+          )}
+        </div>
+
+        <div className={`castle-end ${phase === "end" ? "is-on" : ""}`}>
+          <p className="castle-sub">A próxima página dessa história pode ter o seu olhar.</p>
+          <button type="button" onClick={onBook} className="castle-cta" tabIndex={phase === "end" ? 0 : -1}>
+            Agende seu horário
+          </button>
+        </div>
+      </div>
+
+      <div className="sr-only">
+        <ol>
+          {CHAPTERS.map((ch) => (
+            <li key={ch.title}>
+              <h3>
+                {ch.label}: {ch.title}
+              </h3>
+              <p>{ch.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+/** Escolhe a versão: lista simples (reduzir movimento), leve (celular/tablet) ou 3D completa (computador). */
+export function Trajetoria({ onBook }: { onBook: () => void }) {
+  const [mode, setMode] = useState<"lite" | "full" | "static">("lite");
+  useEffect(() => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const desk = window.matchMedia("(min-width: 1024px) and (pointer: fine)");
+    const pick = () => setMode(reduce.matches ? "static" : desk.matches ? "full" : "lite");
+    pick();
+    reduce.addEventListener("change", pick);
+    desk.addEventListener("change", pick);
+    return () => {
+      reduce.removeEventListener("change", pick);
+      desk.removeEventListener("change", pick);
+    };
+  }, []);
+  if (mode === "static") return <StaticList onBook={onBook} />;
+  if (mode === "full") return <PalaceFull onBook={onBook} />;
+  return <PalaceLite onBook={onBook} />;
 }
